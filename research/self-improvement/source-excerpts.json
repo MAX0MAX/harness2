@@ -1,0 +1,236 @@
+{
+  "schedule": {
+    "path": "harness2/core/schedule.py",
+    "start": 499,
+    "end": 534,
+    "code": "    lib_dir = mode_lib.context_dir() if mode_lib else None\n    r = recursion.run_mode(\n        mode,\n        task_id,\n        k,\n        base,\n        adapter=adapter,\n        prop=prop,\n        work_dir=work_dir,\n        run_id_of=lambda lbl, _n=n: _n.run_id(task_id, lbl),\n        base_tree=base_tree,\n        library_dir=lib_dir,\n    )\n    res.modes[mode] = r.to_dict()\n    candidates = selection.selection_pool(mode, k, r.rollouts, base)\n    if pool_policy == \"finals\" and k == 1:\n        sel = selection.trivial_selection(\n            task_id, k, mode, candidates, adapter=adapter, work_dir=work_dir\n        )\n    else:\n        sel = selection.run_selection(\n            task_id,\n            k,\n            mode,\n            candidates,\n            adapter=adapter,\n            prop=selector,\n            work_dir=work_dir,\n            pool_kind=\"finals\",\n        )\n    if mode_lib and sel.ok:\n        selection.reflect_adoption(\n            task_id,\n            sel,\n            r.rollouts,\n            adapter=adapter,",
+    "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/schedule.py#L499-L534",
+    "local": "code/harness2/core/schedule.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335"
+  },
+  "validate": {
+    "path": "harness2/core/recursion.py",
+    "start": 108,
+    "end": 132,
+    "code": "def _accept_tree(\n    surface,\n    adapter: BenchmarkAdapter,\n    new: harness_tree.Tree,\n    fallback: harness_tree.Tree,\n    label: str,\n) -> tuple[bool, str]:\n    \"\"\"Repair then validate a proposed tree: (kept_base, \"\") if accepted, else the error.\"\"\"\n    triggered = harness_tree.autotrigger(surface, new)\n    if triggered:\n        print(f\"  [{label}] auto-triggered skill(s): {', '.join(triggered)}\", flush=True)\n    changed = harness_tree.diff_summary(surface, fallback, new)\n    kept = not (changed[\"added\"] or changed[\"removed\"] or changed[\"modified\"])\n    try:\n        harness_tree.validate(\n            surface,\n            new,\n            allow_subagents=adapter.spec.allow_subagents,\n            reserved_scripts=harness_tree.RESERVED_SCRIPTS | adapter.spec.reserved_scripts,\n        )\n        adapter.validate_tree(new)\n        context.assert_tree_has_no_grader_verdicts(new)\n    except ValueError as exc:\n        return kept, str(exc)\n    return kept, \"\"",
+    "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L108-L132",
+    "local": "code/harness2/core/recursion.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335"
+  },
+  "propose": {
+    "path": "harness2/core/recursion.py",
+    "start": 367,
+    "end": 389,
+    "code": "\n    specs = [(f\"{d.lower()}{i}\", d, i) for i in range(1, k + 1) for d in (\"INV\", \"DOM\")]\n    with ThreadPoolExecutor(max_workers=min(len(specs), propose_workers)) as pool_x:\n        stages = list(\n            pool_x.map(\n                lambda s: _run_stage(\n                    label=s[0],\n                    dim=s[1],\n                    job=prompts.propose(benchmark_prompts, s[1], surface, k=k, index=s[2]),\n                    fallback=base_tree,\n                    adapter=adapter,\n                    prop=prop,\n                    ctx_dir=ctx_dir,\n                    task_id=task_id,\n                    rollouts=base,\n                    harness_dir=base_dir,\n                    library_dir=library_dir,\n                ),\n                specs,\n            )\n        )\n    _record_sessions(ledger, stages)\n    for stage in stages:",
+    "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L367-L389",
+    "local": "code/harness2/core/recursion.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335"
+  },
+  "probe": {
+    "path": "harness2/core/recursion.py",
+    "start": 397,
+    "end": 410,
+    "code": "            [(stage.label, stage.tree) for stage in stages],\n            run_id_of,\n            work_dir,\n            width=rollout_workers,\n        )\n    )\n\n    pool_ev = [\n        (stage.label, work_dir / \"harnesses\" / stage.label, result.rollouts.get(stage.label))\n        for stage in stages\n    ]\n    agg_specs = [f\"agg{i}\" for i in range(1, k + 1)]\n    with ThreadPoolExecutor(max_workers=min(len(agg_specs), propose_workers)) as pool_x:\n        aggs = list(",
+    "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L397-L410",
+    "local": "code/harness2/core/recursion.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335"
+  },
+  "compose": {
+    "path": "harness2/core/recursion.py",
+    "start": 416,
+    "end": 437,
+    "code": "                    fallback=base_tree,\n                    adapter=adapter,\n                    prop=prop,\n                    ctx_dir=ctx_dir,\n                    task_id=task_id,\n                    rollouts=base,\n                    harness_dir=base_dir,\n                    library_dir=library_dir,\n                    pool=pool_ev,\n                    decisions={stage.label: stage.notes or stage.error for stage in stages},\n                ),\n                agg_specs,\n            )\n        )\n    _record_sessions(ledger, aggs)\n    for stage in aggs:\n        result.stages.append(stage)\n        result.trees[stage.label] = stage.tree\n        result.finals.append(stage.label)\n    result.rollouts.update(\n        _roll_many(\n            adapter,",
+    "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L416-L437",
+    "local": "code/harness2/core/recursion.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335"
+  },
+  "sequential": {
+    "path": "harness2/core/recursion.py",
+    "start": 560,
+    "end": 566,
+    "code": "\n        history = round_pool + [(ck, work_dir / \"harnesses\" / ck, result.rollouts[ck])]\n        current_harness = comp.tree\n\n    result.finals = [f\"c{index}\" for index in range(1, k + 1)]\n    ledger.assert_identity()\n    return result",
+    "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L560-L566",
+    "local": "code/harness2/core/recursion.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335"
+  },
+  "pool": {
+    "path": "harness2/core/selection.py",
+    "start": 93,
+    "end": 112,
+    "code": "def selection_pool(\n    mode: str, k: int, rollouts: dict[str, RunView], base: Sequence[RunView]\n) -> dict[str, RunView]:\n    \"\"\"The one home for selection-pool construction: exactly the k finals of `mode`.\n\n    Labels are derived from k -- agg1..aggk for the parallel mode, c1..ck for the sequential\n    one -- so the reference executions are not in the pool and there is no abstention by\n    construction. This is the published convention and the only pool this release builds.\n\n    `base` is accepted and deliberately unused: it is what the pool excludes, and the call\n    site passes it so that exclusion is visible where the pool is built.\n    \"\"\"\n    del base\n    labels = (\n        [f\"agg{i}\" for i in range(1, int(k) + 1)]\n        if mode == \"agg\"\n        else [f\"c{t}\" for t in range(1, int(k) + 1)]\n    )\n    return {lbl: rollouts[lbl] for lbl in labels if lbl in rollouts}\n",
+    "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L93-L112",
+    "local": "code/harness2/core/selection.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335"
+  },
+  "k1": {
+    "path": "harness2/core/selection.py",
+    "start": 369,
+    "end": 395,
+    "code": "    \"\"\"Deliver the single k=1 final without a selector session.\n\n    The same non-answer drop rules apply, and the record is written with the standard\n    selection.json schema at the path run_selection uses, so judge watchers find it once.\n    \"\"\"\n    if len(candidates) > 1:\n        raise ValueError(\n            f\"trivial_selection expects at most one candidate (the k=1 final), \"\n            f\"got {sorted(candidates)}\"\n        )\n    sel = Selection(task_id=task_id, mode=mode, k=k, trivial=True)\n    pool, _artifacts = _render_pool(candidates, adapter, sel)\n    sel.n_candidates = len(pool)\n    if not pool:\n        sel.error = \"no candidate produced an artifact (finals-only pool has no base fallback)\"\n        return sel\n\n    label = next(iter(pool))\n    sel.ok = True\n    sel.chosen_id = \"A\"\n    sel.chosen_label = label\n    sel.id_map = {\"A\": label}\n    sel.chosen_run_id = pool[label].run_id\n    sel.chosen_is_base = _is_base(label)\n    sel.why = \"trivial pool: single final at k=1; delivered without a selector session\"\n\n    root = Path(work_dir) / \"selection\" / f\"{mode}{k}\"",
+    "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L369-L395",
+    "local": "code/harness2/core/selection.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335"
+  },
+  "reflect": {
+    "path": "harness2/core/selection.py",
+    "start": 462,
+    "end": 478,
+    "code": "    bp: BenchPrompts | None = None,\n    layout: str = \"\",\n) -> dict:\n    \"\"\"Extract a supported lesson from the complete task-local improvement record.\"\"\"\n    mission = \"\\n\\n\".join(\n        [\n            P.experience(bp or resolve_prompts(adapter, task_id)),\n            \"# WHAT HAPPENED\\n\\n\"\n            f\"Harness {sel.chosen_label} was adopted. The selection reasoning was:\\n\\n{sel.why}\\n\\n\"\n            \"context/adoption.json maps any anonymous IDs in that reasoning to rollout labels. \"\n            \"Compare context/harness/ with context/base_harness/ and the candidates in \"\n            \"context/pool/. Read the decisions and execution contrasts before writing.\\n\\n\"\n            + layout,\n        ]\n    )\n    exp_root = root.with_name(root.name + \".experience\")\n    shutil.rmtree(exp_root, ignore_errors=True)",
+    "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L462-L478",
+    "local": "code/harness2/core/selection.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335"
+  },
+  "parse": {
+    "path": "harness2/core/selection.py",
+    "start": 490,
+    "end": 511,
+    "code": "    m = _EXP.search(reply.text)\n    if not m:\n        return {}\n    out: dict = {}\n    for line in m.group(1).strip().splitlines():\n        if \":\" in line:\n            key, _, val = line.partition(\":\")\n            key = key.strip().lower()\n            if key in (\"cue\", \"lesson\", \"evidence\", \"confidence\"):\n                out[key] = val.strip()\n    if not all(out.get(key) for key in (\"cue\", \"lesson\", \"evidence\")):\n        return {}\n    if edits:\n        out[\"edits\"] = edits.group(1).strip()\n    context.assert_tree_has_no_grader_verdicts({\"EXPERIENCE.md\": json.dumps(out)})\n    return out",
+    "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L490-L511",
+    "local": "code/harness2/core/selection.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335"
+  },
+  "library": {
+    "path": "harness2/core/library.py",
+    "start": 117,
+    "end": 151,
+    "code": "\n        The tree is checked for grader verdicts before anything is written.\n        \"\"\"\n        if not has_experience(experience):\n            return None\n        context.assert_tree_has_no_grader_verdicts(harness)\n        context.assert_tree_has_no_grader_verdicts({\"EXPERIENCE.md\": str(experience) + why})\n        d = self.entry_dir(task_id)\n\n        shutil.rmtree(d / \"harness\", ignore_errors=True)\n        (d / \"harness\").mkdir(parents=True, exist_ok=True)\n        harness_tree.write_tree(self.surface, harness, d / \"harness\", stubs=False)\n\n        exp = experience or {}\n        lines = [\n            f\"# {task_id}\",\n            \"\",\n            f\"- adopted: `{label}`\" + (f\"  (run `{run_id}`)\" if run_id else \"\"),\n            f\"- components: {_inventory(self.surface, harness)}\",\n            \"\",\n        ]\n        if why.strip():\n            lines += [\"## Why this was chosen\", why.strip(), \"\"]\n        if exp.get(\"edits\"):\n            lines += [\"## What each edit did\", str(exp[\"edits\"]).strip(), \"\"]\n        if exp.get(\"lesson\"):\n            lines += [\"## Transferable lesson\"]\n            lines += [\n                f\"- **{f}**: {str(exp[f]).strip()}\"\n                for f in (\"cue\", \"lesson\", \"evidence\", \"confidence\")\n                if exp.get(f)\n            ]\n            lines += [\"\"]\n        (d / \"EXPERIENCE.md\").write_text(\"\\n\".join(lines), encoding=\"utf-8\")\n        self.rebuild_index()",
+    "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/library.py#L117-L151",
+    "local": "code/harness2/core/library.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335"
+  },
+  "read": {
+    "path": "harness2/core/context.py",
+    "start": 161,
+    "end": 169,
+    "code": "    if library_dir and Path(library_dir).is_dir() and any(Path(library_dir).iterdir()):\n        assert_no_leak_paths(library_dir, adapter.spec.leak_globs)\n\n        shutil.copytree(library_dir, dest / \"library\", dirs_exist_ok=True)\n        lib = True\n\n    assert_no_leak_paths(dest, adapter.spec.leak_globs)\n\n    assert_no_grader_verdicts(dest)",
+    "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/context.py#L161-L169",
+    "local": "code/harness2/core/context.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335"
+  },
+  "prompt": {
+    "path": "harness2/core/prompts.py",
+    "start": 1121,
+    "end": 1152,
+    "code": "                \"to why it was adopted. Read the trajectories, not the verdict.\",\n                \"# WHAT EACH EDIT DID\\n\\n\"\n                \"Diff every candidate harness against `context/base_harness/`. For each component any \"\n                \"candidate changed, write one row: the component, what the edit actually changed, the \"\n                \"observed difference in execution it produced, and a verdict.\\n\\n\"\n                \"Verdicts are `helped`, `hurt`, `no observed effect` and `confounded`. Use \"\n                \"`confounded` -- and prefer it -- whenever a candidate changed several components at \"\n                \"once and no execution isolates one of them, or when a single rollout is all that \"\n                \"stands behind the difference. A confounded row is a useful record; an invented \"\n                \"attribution poisons the library for every later task. Cite the run and the point in \"\n                \"the trajectory where behavior diverges. If two candidates changed the same component \"\n                \"in different ways, say which forms were tried and what each produced.\",\n                \"# THE ONE LESSON THAT TRANSFERS\\n\\n\"\n                \"Now write at most one durable entry, and only if the edit rows support it.\\n\\n\"\n                \"The `cue` describes the SHAPE OF SITUATION the lesson applies to, so it can fire on a \"\n                \"different matter. Not this task's facts -- the pattern. The `lesson` is the operation \"\n                \"to perform on a harness, stated so it can be applied and checked, and it must name \"\n                \"the component it concerns.\\n\\n\"\n                \"Too generic is useless ('be thorough'); too specific never fires again ('the fee rose \"\n                \"to 250 on Jan 1'). Aim between: 'when an instrument performs several sequential acts \"\n                \"and one of them terminates the actor's own authority, order them so the terminating \"\n                \"act comes last'.\\n\\n\"\n                \"The `evidence` field cites the edit rows the lesson rests on. A lesson resting only \"\n                \"on `confounded` rows is a guess: narrow it to what the record does show, or decline. \"\n                \"Adoption alone never establishes that an edit helped or will transfer. If the record \"\n                \"shows no concrete, reusable execution contrast, write the single line NO_ENTRY in \"\n                \"place of the <experience> block -- the edit rows are still worth writing.\",\n                ANSWER_FREE,\n                EVIDENCE_BOUNDARY,\n                \"# OUTPUT FORMAT\\n\\n\"\n                \"<edits>\\ncomponent: <name as it appears in the harness tree>\\n\"\n                \"candidates: <the labels that carried this edit>\\n\"",
+    "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/prompts.py#L1121-L1152",
+    "local": "code/harness2/core/prompts.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335"
+  },
+  "budget": {
+    "path": "harness2/core/ledger.py",
+    "start": 15,
+    "end": 35,
+    "code": "\"\"\"Budget accounting: R = 4k rollouts and P = 3k improvement stages.\n\nBase executions count toward each mode. Retries are separate invocation counts;\nselection and reflection are recorded outside this ledger.\n\"\"\"\n\nfrom __future__ import annotations\n\nfrom dataclasses import dataclass, field\n\n\ndef expected_rollouts(k: int) -> int:\n    \"\"\"R = 4k: k shared base + 2k candidates + k finals.\"\"\"\n    return 4 * int(k)\n\n\ndef expected_sessions(k: int) -> int:\n    \"\"\"P = 3k: k INV + k DOM + k compositions (parallel: agg1..aggk; sequential: c1..ck).\"\"\"\n    return 3 * int(k)\n\n",
+    "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/ledger.py#L15-L35",
+    "local": "code/harness2/core/ledger.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335"
+  },
+  "cx": {
+    "path": "harness2/substrate/codex.py",
+    "start": 36,
+    "end": 59,
+    "code": "from ..core.tree import SurfaceSpec\nfrom .base import Install, Launcher, RunRequest\n\nCODEX_SURFACE = SurfaceSpec(\n    name=\"codex\",\n    always_on=(\"AGENTS.md\",),\n    always_on_max=8_000,\n    always_on_cap_reason=(\n        \"AGENTS.md is injected whole into EVERY turn, and codex additionally \"\n        \"truncates it silently at 32,768 bytes\"\n    ),\n    skill_dir=\".agents/skills\",\n    skill_name_rule=\"overrides_dir\",\n    trigger_hint=(\n        'Fix it by adding a trigger line naming `{name}` to AGENTS.md, e.g. \"When '\n        \"<the situation this skill handles>, read .agents/skills/{name}/SKILL.md \"\n        'and follow it.\"'\n    ),\n    autotrigger_file=\"AGENTS.md\",\n    trigger_line=\"- When {desc}, read .agents/skills/{name}/SKILL.md and follow it.\\n\",\n    subagent_requires_mode=False,\n    plugin_dir=None,\n    hooks_file=\".codex/hooks.json\",\n    hook_events=frozenset(",
+    "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/substrate/codex.py#L36-L59",
+    "local": "code/harness2/substrate/codex.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335"
+  },
+  "demo": {
+    "path": "harness2/demo.py",
+    "start": 155,
+    "end": 161,
+    "code": "            )\n        else:\n            workspace = context / \"harness\"\n            script = workspace / \"scripts/summarize.py\"\n            script.write_text(script.read_text().replace(\" if amount > 0\", \"\"), encoding=\"utf-8\")\n            text = \"<notes>Keep signed amounts: the base total omitted credits in the source ledger.</notes>\"\n        reply = Reply(label=label, text=text, ok=True, attempts=1, workspace=workspace)",
+    "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/demo.py#L155-L161",
+    "local": "code/harness2/demo.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335"
+  },
+  "htrigger": {
+    "path": "agent/turn_finalizer.py",
+    "start": 764,
+    "end": 792,
+    "code": "    _should_review_skills = (\n        agent._skill_nudge_interval > 0\n        and agent._iters_since_skill >= agent._skill_nudge_interval\n        and \"skill_manage\" in agent.valid_tool_names\n    )\n    if _should_review_skills:\n        agent._iters_since_skill = 0\n\n    # External memory provider: sync the completed turn + queue next prefetch.\n    agent._sync_external_memory_for_turn(\n        original_user_message=original_user_message, final_response=final_response,\n        interrupted=interrupted, messages=messages,\n    )\n\n    # Background memory/skill review runs AFTER delivery so it never competes with the\n    # user's task. Suppressed by skip_background_review (e.g. cron): the fork costs\n    # ~30K tokens / event with no human-in-the-loop benefit. Best-effort; the review\n    # clones the snapshot structurally so its sanitizers can't reach the live transcript.\n    if (\n        final_response\n        and not interrupted\n        and not getattr(agent, \"skip_background_review\", False)\n        and (_should_review_memory or _should_review_skills)\n    ):\n        with suppress(Exception):\n            agent._spawn_background_review(\n                messages_snapshot=list(messages), review_memory=_should_review_memory,\n                review_skills=_should_review_skills,\n            )",
+    "url": "https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/turn_finalizer.py#L764-L792",
+    "local": "code/hermes/agent/turn_finalizer.py",
+    "commit": "0b10b9f8155a7ecadd8c540b87712c791b5c8ac9"
+  },
+  "hspawn": {
+    "path": "run_agent.py",
+    "start": 757,
+    "end": 787,
+    "code": "    def _spawn_background_review(self, messages_snapshot: list[dict], review_memory: bool = False,\n                                 review_skills: bool = False, focus: Optional[str] = None, explicit: bool = False) -> None:\n        \"\"\"Post-turn review entry point: decide WHEN, then spawn.\n\n        A review whose runtime is the MANAGED LOCAL llama-server is queued for machine idle (``defer: auto``)\n        instead of hitting the user's GPU mid-session; everything else spawns immediately. ``explicit``\n        (/refine) is never deferred but does not touch the ``focus``-keyed delegate/enabled gates.\n        \"\"\"\n        # Gates run at enqueue/spawn time; the idle dispatcher re-checks `enabled` at dispatch time.\n        if focus is None and getattr(self, \"_delegate_depth\", 0) > 0:\n            return\n        task_cfg = None\n        if focus is None:\n            from agent.background_review import load_background_review_settings\n            enabled, task_cfg = load_background_review_settings()\n            if not enabled:\n                return\n\n        # Structural clone at the single chokepoint: the fork sanitizes in place, and a shallow copy would\n        # alias the live history's nested tool_calls/content.\n        # Structural clone at the single chokepoint every review path (automatic, /refine, idle-queue\n        # deferral) goes through. See #100795.\n        from agent.turn_finalizer import _clone_background_review_messages\n        kwargs = dict(messages_snapshot=_clone_background_review_messages(messages_snapshot),\n                      review_memory=review_memory, review_skills=review_skills, focus=focus, task_cfg=task_cfg,\n                      explicit=explicit)\n        if focus is None and not explicit and _review_should_defer(self, task_cfg):\n            from agent.review_idle_queue import QUEUE\n            QUEUE.enqueue(self, _review_queue_key(self), kwargs)\n            return\n        self._spawn_background_review_now(**kwargs)",
+    "url": "https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/run_agent.py#L757-L787",
+    "local": "code/hermes/run_agent.py",
+    "commit": "0b10b9f8155a7ecadd8c540b87712c791b5c8ac9"
+  },
+  "hfork": {
+    "path": "agent/background_review.py",
+    "start": 984,
+    "end": 1004,
+    "code": "    if not _routed and write_origin == \"background_review\":\n        _warn_ignored_reasoning_effort(agent, task_cfg)\n    review_agent = AIAgent(**_fork_init_kwargs(agent, _rt, _routed, max_iterations, task_cfg))\n    review_agent._memory_write_origin = review_agent._memory_write_context = write_origin\n    # Fork-turn log tag: the fork shares the parent's session_id (and model on the\n    # same-model path), so its turn-start/turn-exit log lines are otherwise\n    # indistinguishable from live turns (#118693).\n    review_agent._turn_origin = write_origin\n    review_agent._memory_store = agent._memory_store\n    review_agent._memory_enabled = agent._memory_enabled\n    review_agent._user_profile_enabled = agent._user_profile_enabled\n    review_agent._memory_nudge_interval = review_agent._skill_nudge_interval = 0\n    # _skip_mcp_refresh: the between-turns MCP refresh would add late-connecting MCP tools and\n    # break tools[] parity. PERSISTENCE ISOLATION (curator-takeover root cause): sharing the\n    # parent's session_id, the fork would otherwise write its harness turn into the REAL session,\n    # which the next live turn re-reads as a standing instruction; close() must likewise not\n    # finalize the parent's still-active session row. suppress_status_output: fork status/warning\n    # emits go via _print_fn/status_callback, which bypass the stdout redirect.\n    review_agent._skip_mcp_refresh = review_agent._persist_disabled = review_agent.suppress_status_output = True\n    review_agent._end_session_on_close = False\n    review_agent._session_db = None",
+    "url": "https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/background_review.py#L984-L1004",
+    "local": "code/hermes/agent/background_review.py",
+    "commit": "0b10b9f8155a7ecadd8c540b87712c791b5c8ac9"
+  },
+  "hprompt": {
+    "path": "agent/background_review.py",
+    "start": 448,
+    "end": 468,
+    "code": "_SKILL_REVIEW_PROMPT = (\n    \"Review the conversation above and update the skill library. Be ACTIVE — most sessions produce \"\n    \"at least one skill update, even if small. A pass that does nothing is a missed learning \"\n    \"opportunity, not a neutral outcome.\\n\\n\"\n    \"Target shape of the library: CLASS-LEVEL skills, each with a SKILL.md of always-on rules and a \"\n    \"small `references/` set of topical depth. Not a flat list of narrow one-session skills, and \"\n    \"not an umbrella hoarding a references/ file per session. This shapes HOW you update, not \"\n    \"WHETHER you update.\\n\\n\" + _LESSON_LAYER_BLOCK +\n    \"Signals to look for (any one of these warrants action):\\n\"\n    \"  • User corrected your style, tone, format, legibility, or verbosity. Frustration signals \"\n    \"like 'stop doing X', 'this is too verbose', 'don't format like this', 'why are you \"\n    \"explaining', 'just give me the answer', 'you always do Y and I hate it', or an explicit \"\n    \"'remember this' are FIRST-CLASS skill signals, not just memory signals. Update the relevant \"\n    \"skill(s) to embed the preference so the next session starts already knowing.\\n\"\n    \"  • User corrected your workflow, approach, or sequence of steps. Encode the correction as a \"\n    \"pitfall or explicit step in the skill that governs that class of task.\\n\"\n    \"  • Non-trivial technique, fix, workaround, debugging path, or tool-usage pattern emerged \"\n    \"that a future session would benefit from. Capture it.\\n\"\n    \"  • A skill that got loaded or consulted this session turned out to be wrong, missing a step, \"\n    \"or outdated. Patch it NOW.\\n\\n\"\n    \"Preference order — prefer the earliest action that fits, but do pick one when a signal above \"",
+    "url": "https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/background_review.py#L448-L468",
+    "local": "code/hermes/agent/background_review.py",
+    "commit": "0b10b9f8155a7ecadd8c540b87712c791b5c8ac9"
+  },
+  "hwhite": {
+    "path": "agent/background_review.py",
+    "start": 1088,
+    "end": 1104,
+    "code": "def _review_tool_whitelist(\n    review_agent: Any, task_cfg: Optional[dict[str, Any]], review_memory: bool = False,\n) -> tuple[set, set]:\n    \"\"\"``(whitelist, configured_extra_tools)`` for the review fork — DISPATCH-side only, so the\n    advertised ``tools[]`` stays byte-identical to the parent's (prompt-cache parity).\"\"\"\n    from model_tools import get_tool_definitions\n    # Gate the built-in memory tool on BOTH the profile's memory flags and the trigger that fired\n    # (#105921): a skill-nudge review never gets the memory tool, so an unattended fork cannot\n    # act on the memory tool's \"consolidate now\" hint and delete entries no one reviewed.\n    memory_on = review_agent._memory_enabled or review_agent._user_profile_enabled\n    review_toolsets = [\"memory\", \"skills\"] if memory_on and review_memory else [\"skills\"]\n    whitelist = {t[\"function\"][\"name\"] for t in get_tool_definitions(enabled_toolsets=review_toolsets, quiet_mode=True)}\n    # Read-only file tools: denying read_file/search_files caused a per-review denial storm that\n    # starved the loop (read_file also registers the read with the read-before-write guard).\n    # Write tools stay denied — autonomous maintenance goes through skill_manage's validation.\n    whitelist |= {\"read_file\", \"search_files\"}\n    # ``extra_tools`` admits named parent tools (e.g. a human-gated proposal tool). The whitelist",
+    "url": "https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/background_review.py#L1088-L1104",
+    "local": "code/hermes/agent/background_review.py",
+    "commit": "0b10b9f8155a7ecadd8c540b87712c791b5c8ac9"
+  },
+  "hwrite": {
+    "path": "tools/skill_manager_tool.py",
+    "start": 395,
+    "end": 414,
+    "code": "def _guarded_write(name: str, skill_dir: Path, target: Path, action: str, label: str,\n                   content: str) -> Optional[dict[str, Any]]:\n    \"\"\"Read-before-write guard (existing targets only), atomic write, then the security scan;\n    a blocked scan restores the original (or unlinks a new file). Error dict or None.\"\"\"\n    original = None\n    if target.exists():\n        if read_guard := _background_review_read_before_write_guard(name, target, action, label):\n            return read_guard\n        original = target.read_text(encoding=\"utf-8-sig\")\n    from hermes_constants import mkdir_under_hermes_home\n    mkdir_under_hermes_home(target.parent)\n    atomic_write_text(target, content, preserve_mode=True, create_mode=0o644)\n    scan_error = _security_scan_skill(skill_dir)\n    if not scan_error:\n        return None\n    if original is not None:\n        atomic_write_text(target, original, preserve_mode=True)\n    else:\n        target.unlink(missing_ok=True)\n    return _err(scan_error)",
+    "url": "https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/tools/skill_manager_tool.py#L395-L414",
+    "local": "code/hermes/tools/skill_manager_tool.py",
+    "commit": "0b10b9f8155a7ecadd8c540b87712c791b5c8ac9"
+  },
+  "hcreate": {
+    "path": "tools/skill_manager_tool.py",
+    "start": 453,
+    "end": 458,
+    "code": "def _create_skill(name: str, content: str, category: str | None = None) -> dict[str, Any]:\n    if err := (_validate_name(name) or _validate_category(category)\n               or _validate_frontmatter(content, new_skill=True) or _validate_content_size(content)):\n        return _err(err)\n    if existing := _find_skill(name):\n        return _err(f\"A skill named '{name}' already exists at {existing['path']}.\")",
+    "url": "https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/tools/skill_manager_tool.py#L453-L458",
+    "local": "code/hermes/tools/skill_manager_tool.py",
+    "commit": "0b10b9f8155a7ecadd8c540b87712c791b5c8ac9"
+  },
+  "hscan": {
+    "path": "tools/skill_manager_tool.py",
+    "start": 41,
+    "end": 56,
+    "code": "def _guard_agent_created_enabled() -> bool:\n    \"\"\"skills.guard_agent_created (default False): opt-in — terminal() runs the same code ungated.\"\"\"\n    try:\n        from hermes_cli.config import load_config\n        return is_truthy_value(cfg_get(load_config(), \"skills\", \"guard_agent_created\"), default=False)\n    except Exception:\n        return False\n\n\ndef _security_scan_skill(skill_dir: Path) -> Optional[str]:\n    \"\"\"Post-write scan (opt-in); error string if blocked, else None. An \"ask\" verdict\n    (dangerous findings) is surfaced as an error so the agent can retry without them.\"\"\"\n    if not _guard_agent_created_enabled():\n        return None\n    try:\n        result = scan_skill(skill_dir, source=\"agent-created\")",
+    "url": "https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/tools/skill_manager_tool.py#L41-L56",
+    "local": "code/hermes/tools/skill_manager_tool.py",
+    "commit": "0b10b9f8155a7ecadd8c540b87712c791b5c8ac9"
+  },
+  "hload": {
+    "path": "agent/prompt_builder.py",
+    "start": 1363,
+    "end": 1387,
+    "code": "    return (\n        \"## Skills\\n\"\n        \"Before replying, scan the skills below. If a skill matches or is even partially relevant to your \"\n        \"task, you MUST load it with skill_view(name) and follow its instructions. Err on the side of \"\n        \"loading — it is always better to have context you don't need than to miss critical steps, pitfalls, \"\n        \"or established workflows. Skills contain specialized knowledge — API endpoints, tool-specific \"\n        \"commands, and proven workflows that outperform general-purpose approaches. Load the skill \"\n        f\"even if you think you could handle the task with basic tools like {_basic_tools}. \"\n        \"Skills also encode the user's preferred approach, conventions, and quality standards for tasks like \"\n        \"code review, planning, and testing — load them even for tasks you already know how to do, because \"\n        \"the skill defines how it should be done here.\\n\"\n        \"If a skill has issues, fix it with skill_manage(action='patch').\\n\"\n        \"After difficult/iterative tasks, offer to save as a skill. If a skill you loaded was missing steps, \"\n        \"had wrong commands, or needed pitfalls you discovered, update it before finishing.\\n\"\n        \"\\n\"\n        \"<available_skills>\\n\"\n        + \"\\n\".join(index_lines) + \"\\n\"\n        \"</available_skills>\\n\\n\"\n        \"Only proceed without loading a skill if genuinely none are relevant to the task.\"\n        + hidden_note\n    )\n\n\ndef _oneshot_prompt_variant() -> bool:\n    from agent.oneshot_footprint import is_single_query_session",
+    "url": "https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/prompt_builder.py#L1363-L1387",
+    "local": "code/hermes/agent/prompt_builder.py",
+    "commit": "0b10b9f8155a7ecadd8c540b87712c791b5c8ac9"
+  },
+  "hmemory": {
+    "path": "agent/system_prompt.py",
+    "start": 522,
+    "end": 532,
+    "code": "def _memory_parts(agent: Any) -> list[str]:\n    \"\"\"Built-in memory/USER.md blocks plus the external provider block (gated on\n    the same check ``inject_memory_provider_tools`` uses, so we never advertise\n    tools the toolset config gated off).\"\"\"\n    parts: list[str] = []\n    if agent._memory_store:\n        for enabled, kind in ((agent._memory_enabled, \"memory\"), (agent._user_profile_enabled, \"user\")):\n            block = agent._memory_store.format_for_system_prompt(kind) if enabled else None\n            if block:\n                parts.append(block)\n    # External memory provider system prompt block (additive to built-in). Gated on the same check",
+    "url": "https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/system_prompt.py#L522-L532",
+    "local": "code/hermes/agent/system_prompt.py",
+    "commit": "0b10b9f8155a7ecadd8c540b87712c791b5c8ac9"
+  }
+}

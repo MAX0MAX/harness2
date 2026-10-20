@@ -1,0 +1,116 @@
+[
+  {
+    "path": "code/harness2/core/schedule.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335",
+    "sha256": "6e46c5ab1e4ac111818ff3acd6b636e39d650898189ac0c21802a8233ad4cd38",
+    "source": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/schedule.py"
+  },
+  {
+    "path": "code/harness2/core/recursion.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335",
+    "sha256": "b299813b5334f2c0f89024a7f14162f0fdd5418ebd4413be93920b5334a204c1",
+    "source": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py"
+  },
+  {
+    "path": "code/harness2/core/selection.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335",
+    "sha256": "2cb3353b2fd4ec72e6322f2c1f35db1ff2cdab88b0b50c8809d1841d235cb92f",
+    "source": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py"
+  },
+  {
+    "path": "code/harness2/core/library.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335",
+    "sha256": "00219fda201a030f43b35b49c4e73ccf336aedc81164144c435b4b06a1256dd3",
+    "source": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/library.py"
+  },
+  {
+    "path": "code/harness2/core/context.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335",
+    "sha256": "63dd482e5d9467d7e659d186a11289fc7861d08c8aed603244ff0cee92de91f3",
+    "source": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/context.py"
+  },
+  {
+    "path": "code/harness2/core/prompts.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335",
+    "sha256": "d1f4f8db4ab4cb4addcbca175b548db2270375499fda727ac95d271c63cc2504",
+    "source": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/prompts.py"
+  },
+  {
+    "path": "code/harness2/core/tree.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335",
+    "sha256": "c2a15690b1b6b02156e922c5e0b1a215c5065d7bea5a3bae2e56b47309197552",
+    "source": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/tree.py"
+  },
+  {
+    "path": "code/harness2/core/ledger.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335",
+    "sha256": "7059de5d90fc9fb8d4b3b799ff075f09d34f182ba0fdb56eb9d8b8383d0bbf55",
+    "source": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/ledger.py"
+  },
+  {
+    "path": "code/harness2/substrate/codex.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335",
+    "sha256": "281a07271ebed72a617a671ced1b9137901aa8f5d1deffb56c706f44c295e416",
+    "source": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/substrate/codex.py"
+  },
+  {
+    "path": "code/harness2/substrate/opencode.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335",
+    "sha256": "dabc79953d164a0d38802125756379ffa6acdc7b553d2f9036475f8220166ff0",
+    "source": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/substrate/opencode.py"
+  },
+  {
+    "path": "code/harness2/demo.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335",
+    "sha256": "8f338b3254922a8a48d66162f7796dde435d3ef65a7ccd441ef604c81a1d39d4",
+    "source": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/demo.py"
+  },
+  {
+    "path": "code/harness2/cli/demo.py",
+    "commit": "1cfe254e8d25b15f37048c3730134686abe60335",
+    "sha256": "f8ba578ff547d1f78666ee222d0ace3fea34d468405c9766d103b856c6272d25",
+    "source": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/cli/demo.py"
+  },
+  {
+    "path": "code/hermes/agent/background_review.py",
+    "commit": "0b10b9f8155a7ecadd8c540b87712c791b5c8ac9",
+    "sha256": "b177b1cfe8b06f9e787e37920fd9a7b023a038ecbac951bde4e81535d88aa4dc",
+    "source": "https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/background_review.py"
+  },
+  {
+    "path": "code/hermes/agent/turn_finalizer.py",
+    "commit": "0b10b9f8155a7ecadd8c540b87712c791b5c8ac9",
+    "sha256": "4c1e83c6a23bcb7fc10f942306459b54b130975fdce3d76d8fd7f2432698632e",
+    "source": "https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/turn_finalizer.py"
+  },
+  {
+    "path": "code/hermes/agent/prompt_builder.py",
+    "commit": "0b10b9f8155a7ecadd8c540b87712c791b5c8ac9",
+    "sha256": "f4500660b1ba9cbce98236dfe92dab3dd30f2152daac1f5750c8de26f21f7b3c",
+    "source": "https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/prompt_builder.py"
+  },
+  {
+    "path": "code/hermes/agent/system_prompt.py",
+    "commit": "0b10b9f8155a7ecadd8c540b87712c791b5c8ac9",
+    "sha256": "fd8d23565f5eb17b304b0443fa19e3729a69cd699b4217acb27e7eb1503db500",
+    "source": "https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/system_prompt.py"
+  },
+  {
+    "path": "code/hermes/tools/skill_manager_tool.py",
+    "commit": "0b10b9f8155a7ecadd8c540b87712c791b5c8ac9",
+    "sha256": "131d3720957659c37addd27430693d5d0b7dec0b5176a83b2bedad783b7edcd7",
+    "source": "https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/tools/skill_manager_tool.py"
+  },
+  {
+    "path": "code/hermes/tools/memory_tool.py",
+    "commit": "0b10b9f8155a7ecadd8c540b87712c791b5c8ac9",
+    "sha256": "3ac1975d5d34a8e0fd20ea538aa084fc48c5ba21e8b2da4f97f58a7bf3cafaab",
+    "source": "https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/tools/memory_tool.py"
+  },
+  {
+    "path": "code/hermes/run_agent.py",
+    "commit": "0b10b9f8155a7ecadd8c540b87712c791b5c8ac9",
+    "sha256": "0d7110b77b5ccf52e5e432d85cd0a42ec86982418e7f8c1a749311c36da96b66",
+    "source": "https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/run_agent.py"
+  }
+]

@@ -1,0 +1,436 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="基于固定版本源码，拆解 Harness² 和 Hermes-agent 如何修改 harness、重跑、反思和复用经验，并审查改进效果的证据边界。"><title>“自我改进”到底改了什么？｜Harness² 源码调查</title><style>
+:root{--ink:#1b302c;--muted:#61736d;--green:#176c55;--line:#dce5dd;--paper:#f7f8f3;--white:#fff;--amber:#9c5b19;--sand:#fff4e6}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:90px}body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;font-size:16px;line-height:1.8}a{color:var(--green);text-underline-offset:4px}a:hover{color:#103e31}button,input,select{font:inherit}button,a,input,summary,select{outline-offset:5px}button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #d79c40}header{border-bottom:1px solid var(--line);background:rgba(247,248,243,.96);position:sticky;top:0;z-index:5}.bar{max-width:1240px;margin:auto;padding:12px 32px;display:flex;gap:22px;align-items:center;justify-content:space-between}.brand{font-size:14px;font-weight:750;letter-spacing:1px}.bar nav{display:flex;gap:22px;font-size:13px;overflow-x:auto;white-space:nowrap}.bar nav a{text-decoration:none}.wrap{max-width:1180px;padding:0 32px;margin:auto}.hero{padding:76px 0 45px}.eyebrow{font-size:12px;color:var(--green);font-weight:700;letter-spacing:2px;text-transform:uppercase}h1{font-size:clamp(34px,4.8vw,58px);letter-spacing:-2px;line-height:1.25;margin:18px 0 23px;max-width:940px;font-weight:720}h1 span{color:var(--green)}.intro{max-width:900px;font-size:19px;color:#485e56}.meta{font-size:12px;color:var(--muted);margin-top:23px;overflow-wrap:anywhere}.chips{display:flex;gap:8px;flex-wrap:wrap}.chip{font-size:12px;background:#e5eee5;color:var(--green);padding:4px 12px;border-radius:30px}.chip.amber{background:var(--sand);color:var(--amber)}section{padding:42px 0;border-top:1px solid var(--line)}.sectionno{font-size:12px;color:var(--green);letter-spacing:2px;font-weight:750}h2{font-size:30px;line-height:1.4;letter-spacing:-.7px;margin:8px 0 18px}h3{font-size:19px;margin:0 0 10px}p{margin:10px 0 16px}.muted,small{color:var(--muted)}.summarygrid,.twocol{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:25px 0}.twocol{grid-template-columns:1fr 1fr}.card{background:white;border:1px solid var(--line);padding:24px;border-radius:14px}.card p:last-child{margin-bottom:0}.card .number{font-size:11px;color:var(--green);letter-spacing:1px}.notice{padding:18px 22px;border-left:3px solid #ce974d;background:var(--sand);border-radius:0 9px 9px 0;font-size:14px}.notice.green{border-color:var(--green);background:#eaf1e9}.diagram{background:white;border:1px solid var(--line);border-radius:14px;overflow-x:auto;margin:24px 0 14px;padding:20px}.flow{width:100%;min-width:780px;height:auto;display:block}.svgnode rect{fill:#f4f8f2;stroke:#cedcce;stroke-width:1.2;rx:12}.svgnode rect.warnnode{fill:#fff4e6;stroke:#e4c69e}.svgnode text{text-anchor:middle;font-size:14px;fill:#425a50}.svgnode .svgtitle{font-size:17px;fill:#163f30;font-weight:700}.svglabel{font-size:14px;fill:#176c55;font-weight:700}.svgnote{font-size:13px;fill:#8c5a27}.caption{font-size:12px;color:var(--muted)}.steps{display:flex;gap:7px;flex-wrap:wrap;margin:25px 0 16px}.steps button{border:1px solid #cddbcf;background:#fff;color:var(--green);border-radius:8px;padding:8px 15px;cursor:pointer;font-size:14px}.steps button[aria-pressed=true]{background:var(--green);color:white;border-color:var(--green)}.stepdetail{background:#fff;border:1px solid var(--line);padding:26px;border-radius:14px}.stepdetail h3{font-size:23px}.stepdetail .sub{font-size:12px;color:var(--green);margin-bottom:6px}.codebox{border:1px solid #d4dfd6;border-radius:9px;margin:15px 0;background:#fff;overflow:hidden}.codebox summary{cursor:pointer;font-size:13px;font-weight:650;padding:12px 16px;overflow-wrap:anywhere}.codebox summary span{float:right;color:var(--muted);font-weight:400;font-size:12px;margin-left:10px}.codehead{display:flex;gap:18px;justify-content:flex-start;background:#edf2eb;padding:8px 16px;font-size:11px;flex-wrap:wrap}.codehead span{margin-right:auto;color:var(--muted)}pre{margin:0;max-height:500px;overflow:auto;background:#142b25;color:#dfede2;padding:20px 22px;font:12px/1.85 ui-monospace,SFMono-Regular,Consolas,monospace;tab-size:4}p code,td code{font:12px/1.6 ui-monospace,SFMono-Regular,monospace;background:#e9eee7;padding:2px 5px;border-radius:4px;overflow-wrap:anywhere}.tablewrap{overflow-x:auto;margin:24px 0}table{width:100%;border-collapse:collapse;font-size:14px;min-width:660px}th{text-align:left;font-weight:650;background:#eaf0e7;color:var(--green)}td,th{padding:15px 17px;border-bottom:1px solid var(--line);vertical-align:top}td:first-child{font-weight:650;width:19%}td{background:rgba(255,255,255,.65)}.gate{font-size:11px;display:inline-block;border-radius:4px;padding:2px 7px;white-space:nowrap;background:#e4eee3;color:var(--green)}.gate.soft{background:#fff1dd;color:var(--amber)}.demo{display:grid;grid-template-columns:1fr 48px 1fr;gap:10px;align-items:center;margin:25px 0}.democard{background:white;border:1px solid var(--line);border-radius:12px;padding:24px}.demo .big{font-size:40px;line-height:1.4;letter-spacing:-1px}.demo .old{color:#9c5b19}.demo .new{color:var(--green)}.arrow{text-align:center;font-size:28px;color:var(--muted)}.demo label{font-size:12px;color:var(--muted)}.budget{display:flex;gap:22px;align-items:center;background:white;border:1px solid var(--line);padding:20px;border-radius:12px;flex-wrap:wrap}.budget input{accent-color:var(--green);width:180px}.metric{min-width:100px}.metric b{display:block;font-size:30px;line-height:1.2;color:var(--green)}.metric span{font-size:11px;color:var(--muted)}.testlist{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}.testitem{background:white;border:1px solid var(--line);padding:20px;border-radius:10px}.testitem b{font-size:15px}.testitem p{font-size:14px;color:#53675e;margin:6px 0}.sources{display:grid;grid-template-columns:1fr 1fr;gap:10px}.source{display:flex;justify-content:space-between;gap:16px;font-size:12px;background:#fff;padding:12px 16px;border:1px solid var(--line);border-radius:7px;overflow-wrap:anywhere}.source span{font-size:11px;color:var(--muted)}footer{padding:25px 0 48px;font-size:12px;color:var(--muted)}.actions{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;margin:16px 0}.plaincode{border-radius:9px;margin:18px 0}.inline-source{font-size:12px;color:var(--muted)}.static-only{padding:16px;background:var(--sand)}@media(max-width:760px){.bar{padding:12px 18px;display:block}.bar nav{gap:17px;margin-top:6px}.wrap{padding:0 20px}.hero{padding-top:40px}h1{letter-spacing:-1px}.intro{font-size:17px}.summarygrid,.twocol,.testlist,.sources{grid-template-columns:1fr}.demo{grid-template-columns:1fr}.arrow{transform:rotate(90deg)}.card,.stepdetail{padding:19px}h2{font-size:26px}.source{font-size:11px}.codebox summary span{float:none;display:block}.budget{gap:16px}section{padding:32px 0}}@media print{header,.steps,.budget input,.actions{display:none}.wrap{max-width:none}.hero{padding-top:15px}section{break-inside:auto}.codebox pre{max-height:none;white-space:pre-wrap}.diagram{break-inside:avoid}.flow{min-width:0}.card{break-inside:avoid}body{font-size:12px;background:white}.hero h1{font-size:36px}.codebox{break-inside:avoid}a{color:#164e3c}}
+</style></head><body>
+<header><div class="bar"><div class="brand">HARNESS² / SOURCE AUDIT</div><nav aria-label="页面导航"><a href="#mechanism">机制流程</a><a href="#demo">实跑例子</a><a href="#hermes">Hermes 对照</a><a href="#challenge">质疑与验证</a><a href="#sources">源码</a></nav></div></header>
+<main class="wrap"><div class="hero"><div class="eyebrow">Implementation over claims · 2026.10.20</div><h1>“自我改进”<br>到底<span>改了什么</span>？</h1><p class="intro">在审阅的实现中，Harness² 用模型修改 agent 周围的配置和工具文件，重跑同一任务，把采用的方案和经验留给未来。<strong>它实现了自动改进的流程；是否真的变好，仍是需要实验回答的问题。</strong></p><div class="chips"><span class="chip">固定 commit 的原始代码</span><span class="chip">双层流程图</span><span class="chip">本地演示已复现</span><span class="chip amber">未运行真实模型 benchmark</span></div><p class="meta">Harness²：1cfe254e8d25 · Hermes-agent：0b10b9f8155a · 本页为 2026-10-20 源码快照调查。网页不加载外部脚本、字体或图表库；GitHub 链接需要联网。</p></div>
+<section id="position"><div class="sectionno">01 / 先界定“自己”与“改进”</div><h2>改的是工作方法、可执行文件和外部经验</h2><div class="summarygrid"><article class="card"><div class="number">MODEL / 模型层</div><h3>权重保持固定</h3><p>这条流程调用现成模型做编辑、执行、选择与反思。保存经验不会自动触发梯度更新、SFT 或 RL。</p></article><article class="card"><div class="number">HARNESS / 执行层</div><h3>修改围绕模型的系统</h3><p>提示词、技能、脚本、委派角色、插件或 hooks 等。允许修改的具体文件由执行器的 SurfaceSpec 决定。</p></article><article class="card"><div class="number">LIBRARY / 持久化层</div><h3>把经验交给未来的编辑器</h3><p>保存“采用的完整 harness + 经验说明”。下一任务在改配置时读这些例子；这条路径没有自动重写框架核心 Python 算法。</p></article></div><p>因此，Harness² 的定位是：<strong>在已有 agent 外面运行的 harness 搜索与经验复用框架</strong>。它把人通常会做的“看失败、改规则/脚本、再试一次、总结”编成工作流。外置便于接不同执行器、隔离候选和记录实验；这并不证明同样的机制必须在外层实现，或一定优于直接干预 agent。</p><div class="inline-source">依据：<a href="code/harness2/core/recursion.py">recursion.py</a>、<a href="code/harness2/core/library.py">library.py</a>、<a href="code/harness2/substrate/codex.py">codex.py</a> 的固定版本快照。</div></section>
+<section id="mechanism"><div class="sectionno">02 / 沿真实调用链看</div><h2>同题试改，跨题积累</h2><p>图中“模型”负责判断和编写内容；Python 负责组织目录、启动执行、解析回复和保存状态。外部隐藏评分器在采用完成后另行评测，分数不作为这条改进循环的设计输入。</p><svg class="flow" viewBox="0 0 1180 425" role="img" aria-labelledby="flow-title flow-desc"><title id="flow-title">Harness² 的任务内优化与跨任务经验循环</title><desc id="flow-desc">基线执行进入编辑器，产生一般候选和领域候选，重跑后合成最终配置并再执行，采用产物，反思后入同域经验库，下个任务的编辑器读取。最终选择不包含基线。</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="#586d66"/></marker></defs>
+<g fill="none" stroke="#586d66" stroke-width="2" marker-end="url(#arrow)"><path d="M202 103H250"/><path d="M428 103H476"/><path d="M654 103H702"/><path d="M880 103H928"/><path d="M1020 155V278"/><path d="M928 327H880"/><path d="M702 327H654"/><path d="M476 327H428"/><path d="M338 278V167" stroke-dasharray="6 6"/></g>
+<g class="svgnode"><rect x="22" y="53" width="180" height="103"/><text x="112" y="84" class="svgtitle">① 基线执行</text><text x="112" y="111">原任务 + 基础 harness</text><text x="112" y="135">轨迹 / 产物</text>
+<rect x="250" y="53" width="178" height="103"/><text x="339" y="84" class="svgtitle">② 编辑器 · 模型</text><text x="339" y="111">INV / DOM 候选</text><text x="339" y="135">修改文件树</text>
+<rect x="476" y="53" width="178" height="103"/><text x="565" y="84" class="svgtitle">③ Probe · 执行器</text><text x="565" y="111">同一任务重新运行</text><text x="565" y="135">产生对照证据</text>
+<rect x="702" y="53" width="178" height="103"/><text x="791" y="84" class="svgtitle">④ Composer · 模型</text><text x="791" y="111">比较执行差异</text><text x="791" y="135">合成最终 harness</text>
+<rect x="928" y="53" width="178" height="103"/><text x="1017" y="84" class="svgtitle">最终执行</text><text x="1017" y="111">应用合成配置</text><text x="1017" y="135">重新生成产物</text>
+<rect x="928" y="278" width="178" height="103" class="warnnode"/><text x="1017" y="309" class="svgtitle">⑤ 采用</text><text x="1017" y="336">k=1 直接采用 final</text><text x="1017" y="360">k&gt;1 在 finals 间选</text>
+<rect x="702" y="278" width="178" height="103"/><text x="791" y="309" class="svgtitle">⑥ 反思 · 模型</text><text x="791" y="336">修改归因 / 一条经验</text><text x="791" y="360">也可 NO_ENTRY</text>
+<rect x="476" y="278" width="178" height="103"/><text x="565" y="309" class="svgtitle">⑦ 同域经验库</text><text x="565" y="336">采用的完整 harness</text><text x="565" y="360">经验 + INDEX</text>
+<rect x="250" y="278" width="178" height="103"/><text x="339" y="309" class="svgtitle">下一任务</text><text x="339" y="336">复制 library 目录</text><text x="339" y="360">模型按需阅读</text></g>
+<text x="24" y="25" class="svglabel">任务内：Propose → Probe → Compose</text><text x="24" y="408" class="svglabel">跨任务：反思 → 保存 → 给未来编辑器提供经验</text><text x="784" y="214" class="svgnote">注意：基线只作改进证据，不在最终选择池中</text></svg><p class="caption">对应主调用链：schedule._run_one_mode → recursion.run_mode → selection → reflect_adoption → Library.add。图是依据代码绘制的机制示意，不是论文结果图。</p><div class="steps" role="group" aria-label="选择机制步骤"><button data-stage="0" aria-pressed="true">1 观察</button><button data-stage="1" aria-pressed="false">2 提出修改</button><button data-stage="2" aria-pressed="false">3 实际重跑</button><button data-stage="3" aria-pressed="false">4 合成方案</button><button data-stage="4" aria-pressed="false">5 采用产物</button><button data-stage="5" aria-pressed="false">6 提炼经验</button><button data-stage="6" aria-pressed="false">7 保存与复用</button></div><div id="stepdetail" class="stepdetail" aria-live="polite"><div class="sub">步骤 1 / 观察</div><h3>读的是任务、执行轨迹、产物和过去经验</h3><p>先用基础 harness 执行任务。编辑器获得任务材料、基线轨迹、交付物以及同域经验目录；它据此诊断执行问题。这里的反馈来自可观察行为，不是隐藏 benchmark 分数。</p><div class="notice green">输入：task / source / rollout / deliverables / library；输出：供编辑器读取的 context 目录。</div><details class="codebox" open><summary>harness2/core/schedule.py<span>L499–534</span></summary><div class="codehead"><span>原样源码节选 · 1cfe254e8d</span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/schedule.py#L499-L534" target="_blank" rel="noopener">GitHub ↗</a><a href="code/harness2/core/schedule.py" download>完整文件 ↓</a></div><pre><code>    lib_dir = mode_lib.context_dir() if mode_lib else None
+    r = recursion.run_mode(
+        mode,
+        task_id,
+        k,
+        base,
+        adapter=adapter,
+        prop=prop,
+        work_dir=work_dir,
+        run_id_of=lambda lbl, _n=n: _n.run_id(task_id, lbl),
+        base_tree=base_tree,
+        library_dir=lib_dir,
+    )
+    res.modes[mode] = r.to_dict()
+    candidates = selection.selection_pool(mode, k, r.rollouts, base)
+    if pool_policy == &quot;finals&quot; and k == 1:
+        sel = selection.trivial_selection(
+            task_id, k, mode, candidates, adapter=adapter, work_dir=work_dir
+        )
+    else:
+        sel = selection.run_selection(
+            task_id,
+            k,
+            mode,
+            candidates,
+            adapter=adapter,
+            prop=selector,
+            work_dir=work_dir,
+            pool_kind=&quot;finals&quot;,
+        )
+    if mode_lib and sel.ok:
+        selection.reflect_adoption(
+            task_id,
+            sel,
+            r.rollouts,
+            adapter=adapter,</code></pre></details></div><noscript><p class="static-only">JavaScript 已关闭。完整流程仍见上图；所有引用源码可以在底部源码清单中离线打开。</p></noscript><div class="twocol"><article class="card"><h3>parallel：扩大搜索宽度</h3><p>k 份基线证据 → 2k 个 INV/DOM 候选 → 重跑 → k 次独立合成 → 重跑 → 从 k 个 finals 中采用一个。各合成器共享候选证据。</p><details class="codebox" ><summary>INV / DOM 如何发起<span>L367–389</span></summary><div class="codehead"><span>原样源码节选 · 1cfe254e8d</span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L367-L389" target="_blank" rel="noopener">GitHub ↗</a><a href="code/harness2/core/recursion.py" download>完整文件 ↓</a></div><pre><code>
+    specs = [(f&quot;{d.lower()}{i}&quot;, d, i) for i in range(1, k + 1) for d in (&quot;INV&quot;, &quot;DOM&quot;)]
+    with ThreadPoolExecutor(max_workers=min(len(specs), propose_workers)) as pool_x:
+        stages = list(
+            pool_x.map(
+                lambda s: _run_stage(
+                    label=s[0],
+                    dim=s[1],
+                    job=prompts.propose(benchmark_prompts, s[1], surface, k=k, index=s[2]),
+                    fallback=base_tree,
+                    adapter=adapter,
+                    prop=prop,
+                    ctx_dir=ctx_dir,
+                    task_id=task_id,
+                    rollouts=base,
+                    harness_dir=base_dir,
+                    library_dir=library_dir,
+                ),
+                specs,
+            )
+        )
+    _record_sessions(ledger, stages)
+    for stage in stages:</code></pre></details></article><article class="card"><h3>sequential：加深迭代</h3><p>每轮在当前树上提出 INV/DOM 候选、重跑并合成；将合成树带入下一轮，同时保留历史证据。最终选择池是 c1…ck，不保证一定选最后一轮。</p><details class="codebox" ><summary>顺序模式的状态推进<span>L560–566</span></summary><div class="codehead"><span>原样源码节选 · 1cfe254e8d</span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L560-L566" target="_blank" rel="noopener">GitHub ↗</a><a href="code/harness2/core/recursion.py" download>完整文件 ↓</a></div><pre><code>
+        history = round_pool + [(ck, work_dir / &quot;harnesses&quot; / ck, result.rollouts[ck])]
+        current_harness = comp.tree
+
+    result.finals = [f&quot;c{index}&quot; for index in range(1, k + 1)]
+    ledger.assert_identity()
+    return result</code></pre></details></article></div><div class="notice">“对照执行”可以帮助定位问题，但单次轨迹差异通常不足以证明某项改动造成收益。项目自己的反思提示词也要求：多项一起改、无法隔离效果时，优先标成 <code>confounded</code>。</div><details class="codebox" ><summary>反思提示词如何要求谨慎归因<span>L1121–1152</span></summary><div class="codehead"><span>原样源码节选 · 1cfe254e8d</span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/prompts.py#L1121-L1152" target="_blank" rel="noopener">GitHub ↗</a><a href="code/harness2/core/prompts.py" download>完整文件 ↓</a></div><pre><code>                &quot;to why it was adopted. Read the trajectories, not the verdict.&quot;,
+                &quot;# WHAT EACH EDIT DID\n\n&quot;
+                &quot;Diff every candidate harness against `context/base_harness/`. For each component any &quot;
+                &quot;candidate changed, write one row: the component, what the edit actually changed, the &quot;
+                &quot;observed difference in execution it produced, and a verdict.\n\n&quot;
+                &quot;Verdicts are `helped`, `hurt`, `no observed effect` and `confounded`. Use &quot;
+                &quot;`confounded` -- and prefer it -- whenever a candidate changed several components at &quot;
+                &quot;once and no execution isolates one of them, or when a single rollout is all that &quot;
+                &quot;stands behind the difference. A confounded row is a useful record; an invented &quot;
+                &quot;attribution poisons the library for every later task. Cite the run and the point in &quot;
+                &quot;the trajectory where behavior diverges. If two candidates changed the same component &quot;
+                &quot;in different ways, say which forms were tried and what each produced.&quot;,
+                &quot;# THE ONE LESSON THAT TRANSFERS\n\n&quot;
+                &quot;Now write at most one durable entry, and only if the edit rows support it.\n\n&quot;
+                &quot;The `cue` describes the SHAPE OF SITUATION the lesson applies to, so it can fire on a &quot;
+                &quot;different matter. Not this task&#x27;s facts -- the pattern. The `lesson` is the operation &quot;
+                &quot;to perform on a harness, stated so it can be applied and checked, and it must name &quot;
+                &quot;the component it concerns.\n\n&quot;
+                &quot;Too generic is useless (&#x27;be thorough&#x27;); too specific never fires again (&#x27;the fee rose &quot;
+                &quot;to 250 on Jan 1&#x27;). Aim between: &#x27;when an instrument performs several sequential acts &quot;
+                &quot;and one of them terminates the actor&#x27;s own authority, order them so the terminating &quot;
+                &quot;act comes last&#x27;.\n\n&quot;
+                &quot;The `evidence` field cites the edit rows the lesson rests on. A lesson resting only &quot;
+                &quot;on `confounded` rows is a guess: narrow it to what the record does show, or decline. &quot;
+                &quot;Adoption alone never establishes that an edit helped or will transfer. If the record &quot;
+                &quot;shows no concrete, reusable execution contrast, write the single line NO_ENTRY in &quot;
+                &quot;place of the &lt;experience&gt; block -- the edit rows are still worth writing.&quot;,
+                ANSWER_FREE,
+                EVIDENCE_BOUNDARY,
+                &quot;# OUTPUT FORMAT\n\n&quot;
+                &quot;&lt;edits&gt;\ncomponent: &lt;name as it appears in the harness tree&gt;\n&quot;
+                &quot;candidates: &lt;the labels that carried this edit&gt;\n&quot;</code></pre></details></section>
+<section id="surface"><div class="sectionno">03 / 具体修改落在哪里</div><h2>“八个组件”会落成不同的文件表面</h2><p>概念上的八类组件不代表每个执行器都有八套独立文件。以当前仓库的 Codex 接入为例：</p><div class="tablewrap"><table><thead><tr><th>内容</th><th>Codex 接入中的落点</th><th>实际作用与边界</th></tr></thead><tbody><tr><td>常驻指令</td><td><code>AGENTS.md</code></td><td>系统性工作规则、记忆性提示、工具指导可在此表达；项目设 8,000 字符上限。</td></tr><tr><td>可复用技能</td><td><code>.agents/skills/&lt;name&gt;/SKILL.md</code></td><td>过程说明与支持脚本；autotrigger 可补一行触发说明，实际读取仍需观察运行轨迹。</td></tr><tr><td>确定性动作</td><td><code>scripts/*.py</code> / 技能的 <code>scripts/</code></td><td>可以改变计算或校验逻辑；静态验证编译通过不代表逻辑正确。</td></tr><tr><td>委派角色</td><td><code>sub_agents/&lt;name&gt;/AGENT.md</code></td><td>定义角色和任务说明；运行器将角色安装到执行配置。</td></tr><tr><td>执行循环干预</td><td><code>.codex/hooks.json</code></td><td>生命周期 hooks；具体能否生效取决于该仓库运行器和它固定的 CLI 合约。</td></tr><tr><td>OpenCode 差异</td><td>另一份 <code>SurfaceSpec</code></td><td>OpenCode 还有自己的常驻文件与 TypeScript 插件表面；不能把这些路径直接套在 Codex 上。</td></tr></tbody></table></div><details class="codebox" ><summary>Codex 的可编辑文件表面<span>L36–59</span></summary><div class="codehead"><span>原样源码节选 · 1cfe254e8d</span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/substrate/codex.py#L36-L59" target="_blank" rel="noopener">GitHub ↗</a><a href="code/harness2/substrate/codex.py" download>完整文件 ↓</a></div><pre><code>from ..core.tree import SurfaceSpec
+from .base import Install, Launcher, RunRequest
+
+CODEX_SURFACE = SurfaceSpec(
+    name=&quot;codex&quot;,
+    always_on=(&quot;AGENTS.md&quot;,),
+    always_on_max=8_000,
+    always_on_cap_reason=(
+        &quot;AGENTS.md is injected whole into EVERY turn, and codex additionally &quot;
+        &quot;truncates it silently at 32,768 bytes&quot;
+    ),
+    skill_dir=&quot;.agents/skills&quot;,
+    skill_name_rule=&quot;overrides_dir&quot;,
+    trigger_hint=(
+        &#x27;Fix it by adding a trigger line naming `{name}` to AGENTS.md, e.g. &quot;When &#x27;
+        &quot;&lt;the situation this skill handles&gt;, read .agents/skills/{name}/SKILL.md &quot;
+        &#x27;and follow it.&quot;&#x27;
+    ),
+    autotrigger_file=&quot;AGENTS.md&quot;,
+    trigger_line=&quot;- When {desc}, read .agents/skills/{name}/SKILL.md and follow it.\n&quot;,
+    subagent_requires_mode=False,
+    plugin_dir=None,
+    hooks_file=&quot;.codex/hooks.json&quot;,
+    hook_events=frozenset(</code></pre></details><p class="caption">这里只描述 Harness² 仓库的接入代码，未把它推断为所有版本 Codex 产品的通用能力。</p><details class="codebox" ><summary>候选有效性验证<span>L108–132</span></summary><div class="codehead"><span>原样源码节选 · 1cfe254e8d</span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L108-L132" target="_blank" rel="noopener">GitHub ↗</a><a href="code/harness2/core/recursion.py" download>完整文件 ↓</a></div><pre><code>def _accept_tree(
+    surface,
+    adapter: BenchmarkAdapter,
+    new: harness_tree.Tree,
+    fallback: harness_tree.Tree,
+    label: str,
+) -&gt; tuple[bool, str]:
+    &quot;&quot;&quot;Repair then validate a proposed tree: (kept_base, &quot;&quot;) if accepted, else the error.&quot;&quot;&quot;
+    triggered = harness_tree.autotrigger(surface, new)
+    if triggered:
+        print(f&quot;  [{label}] auto-triggered skill(s): {&#x27;, &#x27;.join(triggered)}&quot;, flush=True)
+    changed = harness_tree.diff_summary(surface, fallback, new)
+    kept = not (changed[&quot;added&quot;] or changed[&quot;removed&quot;] or changed[&quot;modified&quot;])
+    try:
+        harness_tree.validate(
+            surface,
+            new,
+            allow_subagents=adapter.spec.allow_subagents,
+            reserved_scripts=harness_tree.RESERVED_SCRIPTS | adapter.spec.reserved_scripts,
+        )
+        adapter.validate_tree(new)
+        context.assert_tree_has_no_grader_verdicts(new)
+    except ValueError as exc:
+        return kept, str(exc)
+    return kept, &quot;&quot;</code></pre></details></section>
+<section id="demo"><div class="sectionno">04 / 已实际运行的例子</div><h2>少算了一笔贷项，究竟改哪一行？</h2><p>复现仓库自带的 <code>DemoAdapter + DemoProposer</code>：任务要求对账本全部带符号金额求和。第一张账本包含 <strong>100.25、−20.10、5.00</strong>；基础脚本错误地只保留正数。</p><div class="demo"><div class="democard"><label>基线实际输出 / ledger-1</label><div class="big old">105.25</div><p><code>if amount &gt; 0</code> 过滤掉了 −20.10。</p><a href="demo-run/executions/demo-oc-agg1/ledger-1/base1/answer.txt">原始输出 ↗</a></div><div class="arrow" aria-hidden="true">→</div><div class="democard"><label>修改后实际输出 / ledger-1</label><div class="big new">85.15</div><p>删掉过滤条件，正数和负数一起累计。</p><a href="demo-run/executions/demo-oc-agg1/ledger-1/agg1/answer.txt">原始输出 ↗</a></div></div><pre class="plaincode"><code># 便于理解的差异展示；原始脚本见下方链接
+- total = sum((amount for amount in amounts if amount &gt; 0), Decimal(0))
++ total = sum((amount for amount in amounts), Decimal(0))</code></pre><div class="actions"><a href="demo-run/base/scripts/summarize.py">修改前脚本</a><a href="demo-run/library/k1/agg/accounting/harnesses/ledger-1/harness/scripts/summarize.py">采用的脚本</a><a href="demo-run/library/k1/agg/accounting/harnesses/ledger-1/EXPERIENCE.md">实际保存的经验</a><a href="demo-run/runs/demo-oc-agg1/ledger-2/context/inv1/library/INDEX.md">第二题编辑器收到的经验索引</a></div><div class="twocol"><article class="card"><h3>本次运行确认了什么</h3><p>2 个任务完成、0 个失败；parallel / sequential 均执行。两种模式共享基线，实际合计 <strong>14 次 Python 执行、16 次确定性编辑器调用</strong>。第二个任务开始前，两种模式的经验库各有 1 条。</p><p>第二张账本 35.50、−10.25、−5.00：基线 35.50，最终 20.25。第二题的编辑上下文里确实出现第一题的经验目录。</p><a href="demo-run/demo.json">查看完整运行统计 ↗</a></article><article class="card"><h3>没有证明什么</h3><p><strong>DemoProposer 是写死的：直接做字符串替换，反思内容也预先写好。</strong>它没有调用 LLM。虽然第二题拿到了经验，编辑器并不靠读它才完成修复。</p><p>所以这只能证明“改文件 → 执行 → 记录 → 跨题传递”的管道可运行，不能证明自主诊断、因果归因、经验迁移或真实任务收益。</p></article></div><details class="codebox" ><summary>DemoProposer 如何写死修复<span>L155–161</span></summary><div class="codehead"><span>原样源码节选 · 1cfe254e8d</span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/demo.py#L155-L161" target="_blank" rel="noopener">GitHub ↗</a><a href="code/harness2/demo.py" download>完整文件 ↓</a></div><pre><code>            )
+        else:
+            workspace = context / &quot;harness&quot;
+            script = workspace / &quot;scripts/summarize.py&quot;
+            script.write_text(script.read_text().replace(&quot; if amount &gt; 0&quot;, &quot;&quot;), encoding=&quot;utf-8&quot;)
+            text = &quot;&lt;notes&gt;Keep signed amounts: the base total omitted credits in the source ledger.&lt;/notes&gt;&quot;
+        reply = Reply(label=label, text=text, ok=True, attempts=1, workspace=workspace)</code></pre></details><p>复现命令（在原 Harness² 仓库根目录执行，使用 Python 3.12 / 3.13；默认不调用模型或付费 API）：</p><pre class="plaincode"><code>python3 -m harness2.cli.demo   --output /tmp/harness2-self-improvement-demo   --k 1 --mode both</code></pre><p class="caption">本次保存的是新目录上的首次运行。demo-run/ 保留关键上游生成记录，完整记录见 demo-run-full.zip；JSON 内绝对路径仍指向当时的临时运行目录，分享后应按 demo-run/ 下的对应相对路径查看。</p></section>
+<section id="hermes"><div class="sectionno">05 / Hermes 已有的部分</div><h2>“把经验写成技能，以后再用”确实已有实现</h2><p>在审阅的 Hermes 版本中，常规 agent 可以通过 <code>skill_manage</code> 更新过程性知识，也有回合完成后的后台 memory / skill review。它们是实在的持久化机制，不能把“会保存经验”本身当成 Harness² 独有的创新。</p><svg class="flow" viewBox="0 0 1100 210" role="img" aria-labelledby="hermes-title"><title id="hermes-title">Hermes 已有的经验更新路径</title><defs><marker id="ha" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="#586d66"/></marker></defs><g fill="none" stroke="#586d66" stroke-width="2" marker-end="url(#ha)"><path d="M194 88H235"/><path d="M429 88H470"/><path d="M664 88H705"/><path d="M899 88H940"/></g><g class="svgnode"><rect x="10" y="35" width="184" height="106"/><text x="102" y="66" class="svgtitle">对话 / 工具执行</text><text x="102" y="95">纠正 / 难点 / 新方法</text><text x="102" y="120">触发条件满足</text><rect x="235" y="35" width="194" height="106"/><text x="332" y="66" class="svgtitle">后台 review fork</text><text x="332" y="95">复制对话快照</text><text x="332" y="120">受限工具权限</text><rect x="470" y="35" width="194" height="106"/><text x="567" y="66" class="svgtitle">提炼 / 更新</text><text x="567" y="95">skills / memory 工具</text><text x="567" y="120">校验后写文件</text><rect x="705" y="35" width="194" height="106"/><text x="802" y="66" class="svgtitle">持久化经验</text><text x="802" y="95">SKILL.md + 支持文件</text><text x="802" y="120">笔记 / 用户画像</text><rect x="940" y="35" width="150" height="106"/><text x="1015" y="66" class="svgtitle">未来使用</text><text x="1015" y="95">索引 → skill_view</text><text x="1015" y="120">记忆进入提示词</text></g><text x="12" y="181" class="svgnote">此图只描述所审阅的经验更新路径；没有在该路径中看到“候选 harness → 同题对照重跑 → compose”的固定搜索流程。</text></svg><div class="twocol"><article class="card"><h3>什么时候触发</h3><p>技能 review 根据工具迭代计数、配置的 nudge 间隔和工具可用性决定；交付完成、未中断且没有禁用后台 review 时才进入后台路径。显式 <code>/refine</code> 也能发起 review。不是每一轮都无条件改技能。</p><details class="codebox" ><summary>后台 review 的触发条件<span>L764–792</span></summary><div class="codehead"><span>原样源码节选 · 0b10b9f815</span><a href="https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/turn_finalizer.py#L764-L792" target="_blank" rel="noopener">GitHub ↗</a><a href="code/hermes/agent/turn_finalizer.py" download>完整文件 ↓</a></div><pre><code>    _should_review_skills = (
+        agent._skill_nudge_interval &gt; 0
+        and agent._iters_since_skill &gt;= agent._skill_nudge_interval
+        and &quot;skill_manage&quot; in agent.valid_tool_names
+    )
+    if _should_review_skills:
+        agent._iters_since_skill = 0
+
+    # External memory provider: sync the completed turn + queue next prefetch.
+    agent._sync_external_memory_for_turn(
+        original_user_message=original_user_message, final_response=final_response,
+        interrupted=interrupted, messages=messages,
+    )
+
+    # Background memory/skill review runs AFTER delivery so it never competes with the
+    # user&#x27;s task. Suppressed by skip_background_review (e.g. cron): the fork costs
+    # ~30K tokens / event with no human-in-the-loop benefit. Best-effort; the review
+    # clones the snapshot structurally so its sanitizers can&#x27;t reach the live transcript.
+    if (
+        final_response
+        and not interrupted
+        and not getattr(agent, &quot;skip_background_review&quot;, False)
+        and (_should_review_memory or _should_review_skills)
+    ):
+        with suppress(Exception):
+            agent._spawn_background_review(
+                messages_snapshot=list(messages), review_memory=_should_review_memory,
+                review_skills=_should_review_skills,
+            )</code></pre></details> <details class="codebox" ><summary>配置 gate、快照克隆和调度<span>L757–787</span></summary><div class="codehead"><span>原样源码节选 · 0b10b9f815</span><a href="https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/run_agent.py#L757-L787" target="_blank" rel="noopener">GitHub ↗</a><a href="code/hermes/run_agent.py" download>完整文件 ↓</a></div><pre><code>    def _spawn_background_review(self, messages_snapshot: list[dict], review_memory: bool = False,
+                                 review_skills: bool = False, focus: Optional[str] = None, explicit: bool = False) -&gt; None:
+        &quot;&quot;&quot;Post-turn review entry point: decide WHEN, then spawn.
+
+        A review whose runtime is the MANAGED LOCAL llama-server is queued for machine idle (``defer: auto``)
+        instead of hitting the user&#x27;s GPU mid-session; everything else spawns immediately. ``explicit``
+        (/refine) is never deferred but does not touch the ``focus``-keyed delegate/enabled gates.
+        &quot;&quot;&quot;
+        # Gates run at enqueue/spawn time; the idle dispatcher re-checks `enabled` at dispatch time.
+        if focus is None and getattr(self, &quot;_delegate_depth&quot;, 0) &gt; 0:
+            return
+        task_cfg = None
+        if focus is None:
+            from agent.background_review import load_background_review_settings
+            enabled, task_cfg = load_background_review_settings()
+            if not enabled:
+                return
+
+        # Structural clone at the single chokepoint: the fork sanitizes in place, and a shallow copy would
+        # alias the live history&#x27;s nested tool_calls/content.
+        # Structural clone at the single chokepoint every review path (automatic, /refine, idle-queue
+        # deferral) goes through. See #100795.
+        from agent.turn_finalizer import _clone_background_review_messages
+        kwargs = dict(messages_snapshot=_clone_background_review_messages(messages_snapshot),
+                      review_memory=review_memory, review_skills=review_skills, focus=focus, task_cfg=task_cfg,
+                      explicit=explicit)
+        if focus is None and not explicit and _review_should_defer(self, task_cfg):
+            from agent.review_idle_queue import QUEUE
+            QUEUE.enqueue(self, _review_queue_key(self), kwargs)
+            return
+        self._spawn_background_review_now(**kwargs)</code></pre></details></article><article class="card"><h3>改动怎么保存、以后怎么生效</h3><p>后台 fork 读取对话快照，继承运行环境，共享 memory store；默认工具白名单限制它通过专门的 skills / memory 工具工作。skill 管理器做结构、路径等校验后写文件。</p><p>未来提示词列出技能索引，模型通过 <code>skill_view</code> 加载适用的正文；启用的笔记和用户画像由 system_prompt 构建器注入。当前缓存提示词不会因每次落盘立刻全部重建，生效时机还受会话和重建机制影响。</p><details class="codebox" ><summary>技能文件如何落盘<span>L395–414</span></summary><div class="codehead"><span>原样源码节选 · 0b10b9f815</span><a href="https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/tools/skill_manager_tool.py#L395-L414" target="_blank" rel="noopener">GitHub ↗</a><a href="code/hermes/tools/skill_manager_tool.py" download>完整文件 ↓</a></div><pre><code>def _guarded_write(name: str, skill_dir: Path, target: Path, action: str, label: str,
+                   content: str) -&gt; Optional[dict[str, Any]]:
+    &quot;&quot;&quot;Read-before-write guard (existing targets only), atomic write, then the security scan;
+    a blocked scan restores the original (or unlinks a new file). Error dict or None.&quot;&quot;&quot;
+    original = None
+    if target.exists():
+        if read_guard := _background_review_read_before_write_guard(name, target, action, label):
+            return read_guard
+        original = target.read_text(encoding=&quot;utf-8-sig&quot;)
+    from hermes_constants import mkdir_under_hermes_home
+    mkdir_under_hermes_home(target.parent)
+    atomic_write_text(target, content, preserve_mode=True, create_mode=0o644)
+    scan_error = _security_scan_skill(skill_dir)
+    if not scan_error:
+        return None
+    if original is not None:
+        atomic_write_text(target, original, preserve_mode=True)
+    else:
+        target.unlink(missing_ok=True)
+    return _err(scan_error)</code></pre></details> <details class="codebox" ><summary>技能索引如何要求按需加载<span>L1363–1387</span></summary><div class="codehead"><span>原样源码节选 · 0b10b9f815</span><a href="https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/prompt_builder.py#L1363-L1387" target="_blank" rel="noopener">GitHub ↗</a><a href="code/hermes/agent/prompt_builder.py" download>完整文件 ↓</a></div><pre><code>    return (
+        &quot;## Skills\n&quot;
+        &quot;Before replying, scan the skills below. If a skill matches or is even partially relevant to your &quot;
+        &quot;task, you MUST load it with skill_view(name) and follow its instructions. Err on the side of &quot;
+        &quot;loading — it is always better to have context you don&#x27;t need than to miss critical steps, pitfalls, &quot;
+        &quot;or established workflows. Skills contain specialized knowledge — API endpoints, tool-specific &quot;
+        &quot;commands, and proven workflows that outperform general-purpose approaches. Load the skill &quot;
+        f&quot;even if you think you could handle the task with basic tools like {_basic_tools}. &quot;
+        &quot;Skills also encode the user&#x27;s preferred approach, conventions, and quality standards for tasks like &quot;
+        &quot;code review, planning, and testing — load them even for tasks you already know how to do, because &quot;
+        &quot;the skill defines how it should be done here.\n&quot;
+        &quot;If a skill has issues, fix it with skill_manage(action=&#x27;patch&#x27;).\n&quot;
+        &quot;After difficult/iterative tasks, offer to save as a skill. If a skill you loaded was missing steps, &quot;
+        &quot;had wrong commands, or needed pitfalls you discovered, update it before finishing.\n&quot;
+        &quot;\n&quot;
+        &quot;&lt;available_skills&gt;\n&quot;
+        + &quot;\n&quot;.join(index_lines) + &quot;\n&quot;
+        &quot;&lt;/available_skills&gt;\n\n&quot;
+        &quot;Only proceed without loading a skill if genuinely none are relevant to the task.&quot;
+        + hidden_note
+    )
+
+
+def _oneshot_prompt_variant() -&gt; bool:
+    from agent.oneshot_footprint import is_single_query_session</code></pre></details> <details class="codebox" ><summary>记忆如何进入系统提示词<span>L522–532</span></summary><div class="codehead"><span>原样源码节选 · 0b10b9f815</span><a href="https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/system_prompt.py#L522-L532" target="_blank" rel="noopener">GitHub ↗</a><a href="code/hermes/agent/system_prompt.py" download>完整文件 ↓</a></div><pre><code>def _memory_parts(agent: Any) -&gt; list[str]:
+    &quot;&quot;&quot;Built-in memory/USER.md blocks plus the external provider block (gated on
+    the same check ``inject_memory_provider_tools`` uses, so we never advertise
+    tools the toolset config gated off).&quot;&quot;&quot;
+    parts: list[str] = []
+    if agent._memory_store:
+        for enabled, kind in ((agent._memory_enabled, &quot;memory&quot;), (agent._user_profile_enabled, &quot;user&quot;)):
+            block = agent._memory_store.format_for_system_prompt(kind) if enabled else None
+            if block:
+                parts.append(block)
+    # External memory provider system prompt block (additive to built-in). Gated on the same check</code></pre></details></article></div><div class="tablewrap"><table><thead><tr><th>比较项</th><th>Hermes 所审阅路径</th><th>Harness² 所审阅路径</th></tr></thead><tbody><tr><td>学习材料</td><td>真实对话、用户纠正、工具使用、已加载技能的缺口。</td><td>原任务的基线及多个候选执行、修改说明、产物、过去同域经验。</td></tr><tr><td>改变对象</td><td>技能正文和支持文件，启用的笔记 / 用户画像。</td><td>执行器允许编辑的完整 harness 文件树，以及经验库。</td></tr><tr><td>本题是否系统性试改重跑</td><td>后台学习路径中未见固定的多 harness 对照搜索；agent 本身仍可能执行测试或修复。</td><td>明确组织 Propose–Probe–Compose，每个候选和合成方案都重跑原任务。</td></tr><tr><td>长期记住什么</td><td>可直接加载的技能和持久化记忆。</td><td>同域、按 run / mode 隔离的历史采用树与反思，供未来编辑器改配置时参考。</td></tr><tr><td>谁验证有帮助</td><td>模型判断；写入保护不是任务效果的对照实验。</td><td>模型比较产物并反思；独立 benchmark 评测在采用后进行，也没有逐条证明经验有因果收益。</td></tr></tbody></table></div><div class="notice">审查结论：两者在“外部知识持久化”上重叠。Harness² 更具体的差异在于<strong>有预算地搜索 harness，并利用同题执行差异合成方案</strong>。这是一种实现区别；是否值得额外成本，要和直接指导、单 agent 反思、等预算重试等方式比较。此处没有声称穷尽 Hermes 的所有验证功能。</div><p class="caption">Hermes 的后台技能提示词还明确鼓励积极更新（“A pass that does nothing is a missed learning opportunity”）。这是写入倾向，不是效果保证；需要测量无效经验增长、错误泛化和后续退化。</p><details class="codebox" ><summary>后台技能更新提示词原文<span>L448–468</span></summary><div class="codehead"><span>原样源码节选 · 0b10b9f815</span><a href="https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/background_review.py#L448-L468" target="_blank" rel="noopener">GitHub ↗</a><a href="code/hermes/agent/background_review.py" download>完整文件 ↓</a></div><pre><code>_SKILL_REVIEW_PROMPT = (
+    &quot;Review the conversation above and update the skill library. Be ACTIVE — most sessions produce &quot;
+    &quot;at least one skill update, even if small. A pass that does nothing is a missed learning &quot;
+    &quot;opportunity, not a neutral outcome.\n\n&quot;
+    &quot;Target shape of the library: CLASS-LEVEL skills, each with a SKILL.md of always-on rules and a &quot;
+    &quot;small `references/` set of topical depth. Not a flat list of narrow one-session skills, and &quot;
+    &quot;not an umbrella hoarding a references/ file per session. This shapes HOW you update, not &quot;
+    &quot;WHETHER you update.\n\n&quot; + _LESSON_LAYER_BLOCK +
+    &quot;Signals to look for (any one of these warrants action):\n&quot;
+    &quot;  • User corrected your style, tone, format, legibility, or verbosity. Frustration signals &quot;
+    &quot;like &#x27;stop doing X&#x27;, &#x27;this is too verbose&#x27;, &#x27;don&#x27;t format like this&#x27;, &#x27;why are you &quot;
+    &quot;explaining&#x27;, &#x27;just give me the answer&#x27;, &#x27;you always do Y and I hate it&#x27;, or an explicit &quot;
+    &quot;&#x27;remember this&#x27; are FIRST-CLASS skill signals, not just memory signals. Update the relevant &quot;
+    &quot;skill(s) to embed the preference so the next session starts already knowing.\n&quot;
+    &quot;  • User corrected your workflow, approach, or sequence of steps. Encode the correction as a &quot;
+    &quot;pitfall or explicit step in the skill that governs that class of task.\n&quot;
+    &quot;  • Non-trivial technique, fix, workaround, debugging path, or tool-usage pattern emerged &quot;
+    &quot;that a future session would benefit from. Capture it.\n&quot;
+    &quot;  • A skill that got loaded or consulted this session turned out to be wrong, missing a step, &quot;
+    &quot;or outdated. Patch it NOW.\n\n&quot;
+    &quot;Preference order — prefer the earliest action that fits, but do pick one when a signal above &quot;</code></pre></details></section>
+<section id="gates"><div class="sectionno">06 / 代码保证到哪里</div><h2>“有验证”需要继续追问：验证了什么？</h2><div class="tablewrap"><table><thead><tr><th>环节</th><th>代码实际检查</th><th>仍依赖模型或实验</th></tr></thead><tbody><tr><td>候选 harness<br><span class="gate">程序约束</span></td><td>编辑范围、路径、字符上限、前置信息、Python 语法、脚本引用、hook 结构、adapter 的额外规则等；失败可重试或回退。</td><td>规则是否适用、脚本语义是否正确、hook 是否带来净收益。</td></tr><tr><td>采用<br><span class="gate soft">模型判断 / 唯一候选</span></td><td>选择池只含 finals；k=1 直接采用。k&gt;1 解析并验证所选匿名 ID 合法。</td><td>选中的产物是否真更好。没有通过这一步证明不劣于基线。</td></tr><tr><td>经验入库<br><span class="gate">格式门</span></td><td><code>cue / lesson / evidence</code> 非空；检查特定评分泄漏字段。无有效经验则不写库。</td><td>经验是否因果成立、可迁移。<code>confidence</code> 不是可靠性打分阈值；<code>confounded</code> 的谨慎归因主要靠提示词。</td></tr><tr><td>经验复用<br><span class="gate soft">模型读取与应用</span></td><td>按 domain / mode 提供历史库，并复制到上下文目录。</td><td>是否真正读过、选对规则、去掉旧任务事实、避免负迁移。</td></tr><tr><td>评分隔离<br><span class="gate">代码路径 + 检查</span></td><td>选择/反思上下文检查特定泄漏路径与 verdict 内容；judge 在采用后评分。</td><td>不等于全面阻断在线答案。README 明示执行器网络默认不受限，公开 benchmark 答案仍需另做网络限制。</td></tr><tr><td>Hermes 技能写入<br><span class="gate">工具保护</span></td><td>结构 / 路径检查、既有目标读前写约束、原子写入等。安全扫描由配置选择启用。</td><td>技能是否提高任务质量。安全扫描也不能代替效果实验，且不能假定默认启用。</td></tr></tbody></table></div><div class="twocol"><div><details class="codebox" ><summary>经验解析门：真正检查了哪些字段<span>L490–511</span></summary><div class="codehead"><span>原样源码节选 · 1cfe254e8d</span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L490-L511" target="_blank" rel="noopener">GitHub ↗</a><a href="code/harness2/core/selection.py" download>完整文件 ↓</a></div><pre><code>    m = _EXP.search(reply.text)
+    if not m:
+        return {}
+    out: dict = {}
+    for line in m.group(1).strip().splitlines():
+        if &quot;:&quot; in line:
+            key, _, val = line.partition(&quot;:&quot;)
+            key = key.strip().lower()
+            if key in (&quot;cue&quot;, &quot;lesson&quot;, &quot;evidence&quot;, &quot;confidence&quot;):
+                out[key] = val.strip()
+    if not all(out.get(key) for key in (&quot;cue&quot;, &quot;lesson&quot;, &quot;evidence&quot;)):
+        return {}
+    if edits:
+        out[&quot;edits&quot;] = edits.group(1).strip()
+    context.assert_tree_has_no_grader_verdicts({&quot;EXPERIENCE.md&quot;: json.dumps(out)})
+    return out</code></pre></details> <details class="codebox" ><summary>入库保存的内容<span>L117–151</span></summary><div class="codehead"><span>原样源码节选 · 1cfe254e8d</span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/library.py#L117-L151" target="_blank" rel="noopener">GitHub ↗</a><a href="code/harness2/core/library.py" download>完整文件 ↓</a></div><pre><code>
+        The tree is checked for grader verdicts before anything is written.
+        &quot;&quot;&quot;
+        if not has_experience(experience):
+            return None
+        context.assert_tree_has_no_grader_verdicts(harness)
+        context.assert_tree_has_no_grader_verdicts({&quot;EXPERIENCE.md&quot;: str(experience) + why})
+        d = self.entry_dir(task_id)
+
+        shutil.rmtree(d / &quot;harness&quot;, ignore_errors=True)
+        (d / &quot;harness&quot;).mkdir(parents=True, exist_ok=True)
+        harness_tree.write_tree(self.surface, harness, d / &quot;harness&quot;, stubs=False)
+
+        exp = experience or {}
+        lines = [
+            f&quot;# {task_id}&quot;,
+            &quot;&quot;,
+            f&quot;- adopted: `{label}`&quot; + (f&quot;  (run `{run_id}`)&quot; if run_id else &quot;&quot;),
+            f&quot;- components: {_inventory(self.surface, harness)}&quot;,
+            &quot;&quot;,
+        ]
+        if why.strip():
+            lines += [&quot;## Why this was chosen&quot;, why.strip(), &quot;&quot;]
+        if exp.get(&quot;edits&quot;):
+            lines += [&quot;## What each edit did&quot;, str(exp[&quot;edits&quot;]).strip(), &quot;&quot;]
+        if exp.get(&quot;lesson&quot;):
+            lines += [&quot;## Transferable lesson&quot;]
+            lines += [
+                f&quot;- **{f}**: {str(exp[f]).strip()}&quot;
+                for f in (&quot;cue&quot;, &quot;lesson&quot;, &quot;evidence&quot;, &quot;confidence&quot;)
+                if exp.get(f)
+            ]
+            lines += [&quot;&quot;]
+        (d / &quot;EXPERIENCE.md&quot;).write_text(&quot;\n&quot;.join(lines), encoding=&quot;utf-8&quot;)
+        self.rebuild_index()</code></pre></details></div><div><details class="codebox" ><summary>选择池明确排除 base<span>L93–112</span></summary><div class="codehead"><span>原样源码节选 · 1cfe254e8d</span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L93-L112" target="_blank" rel="noopener">GitHub ↗</a><a href="code/harness2/core/selection.py" download>完整文件 ↓</a></div><pre><code>def selection_pool(
+    mode: str, k: int, rollouts: dict[str, RunView], base: Sequence[RunView]
+) -&gt; dict[str, RunView]:
+    &quot;&quot;&quot;The one home for selection-pool construction: exactly the k finals of `mode`.
+
+    Labels are derived from k -- agg1..aggk for the parallel mode, c1..ck for the sequential
+    one -- so the reference executions are not in the pool and there is no abstention by
+    construction. This is the published convention and the only pool this release builds.
+
+    `base` is accepted and deliberately unused: it is what the pool excludes, and the call
+    site passes it so that exclusion is visible where the pool is built.
+    &quot;&quot;&quot;
+    del base
+    labels = (
+        [f&quot;agg{i}&quot; for i in range(1, int(k) + 1)]
+        if mode == &quot;agg&quot;
+        else [f&quot;c{t}&quot; for t in range(1, int(k) + 1)]
+    )
+    return {lbl: rollouts[lbl] for lbl in labels if lbl in rollouts}
+</code></pre></details> <details class="codebox" ><summary>k=1 不调用 selector<span>L369–395</span></summary><div class="codehead"><span>原样源码节选 · 1cfe254e8d</span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L369-L395" target="_blank" rel="noopener">GitHub ↗</a><a href="code/harness2/core/selection.py" download>完整文件 ↓</a></div><pre><code>    &quot;&quot;&quot;Deliver the single k=1 final without a selector session.
+
+    The same non-answer drop rules apply, and the record is written with the standard
+    selection.json schema at the path run_selection uses, so judge watchers find it once.
+    &quot;&quot;&quot;
+    if len(candidates) &gt; 1:
+        raise ValueError(
+            f&quot;trivial_selection expects at most one candidate (the k=1 final), &quot;
+            f&quot;got {sorted(candidates)}&quot;
+        )
+    sel = Selection(task_id=task_id, mode=mode, k=k, trivial=True)
+    pool, _artifacts = _render_pool(candidates, adapter, sel)
+    sel.n_candidates = len(pool)
+    if not pool:
+        sel.error = &quot;no candidate produced an artifact (finals-only pool has no base fallback)&quot;
+        return sel
+
+    label = next(iter(pool))
+    sel.ok = True
+    sel.chosen_id = &quot;A&quot;
+    sel.chosen_label = label
+    sel.id_map = {&quot;A&quot;: label}
+    sel.chosen_run_id = pool[label].run_id
+    sel.chosen_is_base = _is_base(label)
+    sel.why = &quot;trivial pool: single final at k=1; delivered without a selector session&quot;
+
+    root = Path(work_dir) / &quot;selection&quot; / f&quot;{mode}{k}&quot;</code></pre></details> <details class="codebox" ><summary>Hermes 安全扫描是 opt-in<span>L41–56</span></summary><div class="codehead"><span>原样源码节选 · 0b10b9f815</span><a href="https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/tools/skill_manager_tool.py#L41-L56" target="_blank" rel="noopener">GitHub ↗</a><a href="code/hermes/tools/skill_manager_tool.py" download>完整文件 ↓</a></div><pre><code>def _guard_agent_created_enabled() -&gt; bool:
+    &quot;&quot;&quot;skills.guard_agent_created (default False): opt-in — terminal() runs the same code ungated.&quot;&quot;&quot;
+    try:
+        from hermes_cli.config import load_config
+        return is_truthy_value(cfg_get(load_config(), &quot;skills&quot;, &quot;guard_agent_created&quot;), default=False)
+    except Exception:
+        return False
+
+
+def _security_scan_skill(skill_dir: Path) -&gt; Optional[str]:
+    &quot;&quot;&quot;Post-write scan (opt-in); error string if blocked, else None. An &quot;ask&quot; verdict
+    (dangerous findings) is surfaced as an error so the agent can retry without them.&quot;&quot;&quot;
+    if not _guard_agent_created_enabled():
+        return None
+    try:
+        result = scan_skill(skill_dir, source=&quot;agent-created&quot;)</code></pre></details></div></div><div class="notice green"><strong>最有力的源码层面质疑：</strong>一个系统可以自动改配置、选择产物、写出格式完整的反思，并把经验带到下一题，整个流程都成功；但配置仍可能更差，反思仍可能错误。流程闭环与效果闭环是两件需要分别验证的事。</div></section>
+<section id="cost"><div class="sectionno">07 / 预算不是免费的</div><h2>先把“多花了多少”摊开</h2><p>按项目自己的记账公式，单任务、单模式的执行预算是 <strong>R = 4k</strong>：k 个基线 + 2k 个候选 + k 个最终执行；改进阶段是 <strong>P = 3k</strong>。selector、经验反思和失败重试另计。不同阶段的 token、时长和价格也不相同。</p><div class="budget"><label for="budgetK">k = <strong id="kValue">1</strong></label><input type="range" id="budgetK" min="1" max="6" value="1" aria-label="任务内递归预算 k"><div class="metric"><b id="rollouts">4</b><span>任务执行 R</span></div><div class="metric"><b id="editors">3</b><span>改进阶段 P</span></div><div class="metric"><b id="selectors">0</b><span>selector 会话（正常路径）</span></div><div class="metric"><b>+1</b><span>反思调用（满足条件时）</span></div></div><p id="budgetText" class="caption">k=1：唯一 final 直接采用；经验库启用且采用成功时再反思。这里显示计划阶段数，不是实际 API 请求数。</p><details class="codebox" ><summary>项目的预算公式<span>L15–35</span></summary><div class="codehead"><span>原样源码节选 · 1cfe254e8d</span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/ledger.py#L15-L35" target="_blank" rel="noopener">GitHub ↗</a><a href="code/harness2/core/ledger.py" download>完整文件 ↓</a></div><pre><code>&quot;&quot;&quot;Budget accounting: R = 4k rollouts and P = 3k improvement stages.
+
+Base executions count toward each mode. Retries are separate invocation counts;
+selection and reflection are recorded outside this ledger.
+&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+
+def expected_rollouts(k: int) -&gt; int:
+    &quot;&quot;&quot;R = 4k: k shared base + 2k candidates + k finals.&quot;&quot;&quot;
+    return 4 * int(k)
+
+
+def expected_sessions(k: int) -&gt; int:
+    &quot;&quot;&quot;P = 3k: k INV + k DOM + k compositions (parallel: agg1..aggk; sequential: c1..ck).&quot;&quot;&quot;
+    return 3 * int(k)
+
+</code></pre></details><p>所以判断必要性要用<strong>等预算比较</strong>：若多跑几次、人工一次纠正、直接修一个脚本就达到相同收益，不能把差异全部归因于“外面多加一层”。多次执行、搜索策略、产物选择、经验迁移各自的贡献需要拆开。</p></section>
+<section id="challenge"><div class="sectionno">08 / 如何继续 challenge</div><h2>把“会改”与“改得更好”拆成可检验的问题</h2><p>以下是建议的验证方案，<strong>本次未执行这些真实模型实验</strong>。固定模型、初始 harness、任务顺序、工具/网络环境，记录总 token、美元成本和耗时；任务由独立评分或可复核测试评判。</p><div class="testlist"><article class="testitem"><b>A / 和等预算直接干预比</b><p>对比单次基线、等预算多次重试并择优、直接加入人工纠正、单 agent 反思，以及完整 Harness²。观察成功率、成本、延迟和退化率。</p></article><article class="testitem"><b>B / 经验库到底有无增益</b><p>同样的任务搜索预算下，比较空库、真实历史库和打乱 domain 的库；只在未参与经验生成的后续任务上衡量迁移。检查是否真的读取与应用过经验。</p></article><article class="testitem"><b>C / 去掉对照或合成还能否一样好</b><p>去掉 Probe、只修基线；或保留 Probe 去掉 Compose。把省下的预算补给其他组，以区分搜索次数与对照证据本身的贡献。</p></article><article class="testitem"><b>D / 给错误经验一个压力测试</b><p>注入看似合理但错误的规则，或改变后续任务事实。测量识别、拒用、修正及负迁移；检查库增长后的上下文与维护成本。</p></article><article class="testitem"><b>E / 能否可靠地“不改”</b><p>放入基础 harness 已正确完成的任务，检验是否徒增规则、强制选出更差产物。额外试验让 baseline 进入选择池的效果；这不是当前发布版默认行为。</p></article><article class="testitem"><b>F / 改进能否重复出现</b><p>对同题、多随机种子重复执行，区分单次巧合与稳定收益；对具体组件做隔离消融，再让独立验证者审阅经验归因。</p></article></div><p style="margin-top:24px"><strong>当前可以下的判断：</strong>Harness² 提供了一套可检查、可复现的自动试改与记录机制。要说“比直接干预更有效”或“必须再加一层”，还需要上述控制实验；仅凭“自我改进”的名称、保存了记忆、社区认同或一组平均分，都不足以推出这个结论。</p></section>
+<section id="sources"><div class="sectionno">09 / 证据与附件</div><h2>原始代码、运行记录，都可以往下追</h2><p>源码链接固定到 commit。下列完整文件均作为离线附件保存；页面代码块是原样节选。流程图、解释、差异展示与实验建议由本次调查整理，不冒充上游源码或已执行实验。</p><div class="actions"><a href="source-manifest.json" download>源码 SHA-256 清单 ↓</a><a href="source-excerpts.json" download>页面全部代码节选 ↓</a><a href="flowcharts.mmd" download>可编辑 Mermaid 图源 ↓</a><a href="demo-run/demo.json">运行报告 ↗</a><a href="demo-run-full.zip" download>完整运行记录 ↓</a><a href="README.md">阅读与复现说明 ↗</a><button id="expandAll" type="button">展开全部已显示的代码</button></div><div class="sources"><div class="source"><a href="code/harness2/core/schedule.py">harness2/core/schedule.py</a><span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/schedule.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/harness2/core/recursion.py">harness2/core/recursion.py</a><span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/harness2/core/selection.py">harness2/core/selection.py</a><span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/harness2/core/library.py">harness2/core/library.py</a><span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/library.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/harness2/core/context.py">harness2/core/context.py</a><span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/context.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/harness2/core/prompts.py">harness2/core/prompts.py</a><span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/prompts.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/harness2/core/tree.py">harness2/core/tree.py</a><span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/tree.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/harness2/core/ledger.py">harness2/core/ledger.py</a><span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/ledger.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/harness2/substrate/codex.py">harness2/substrate/codex.py</a><span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/substrate/codex.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/harness2/substrate/opencode.py">harness2/substrate/opencode.py</a><span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/substrate/opencode.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/harness2/demo.py">harness2/demo.py</a><span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/demo.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/harness2/cli/demo.py">harness2/cli/demo.py</a><span><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/cli/demo.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/hermes/agent/background_review.py">hermes/agent/background_review.py</a><span><a href="https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/background_review.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/hermes/agent/turn_finalizer.py">hermes/agent/turn_finalizer.py</a><span><a href="https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/turn_finalizer.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/hermes/agent/prompt_builder.py">hermes/agent/prompt_builder.py</a><span><a href="https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/prompt_builder.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/hermes/agent/system_prompt.py">hermes/agent/system_prompt.py</a><span><a href="https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/agent/system_prompt.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/hermes/tools/skill_manager_tool.py">hermes/tools/skill_manager_tool.py</a><span><a href="https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/tools/skill_manager_tool.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/hermes/tools/memory_tool.py">hermes/tools/memory_tool.py</a><span><a href="https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/tools/memory_tool.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div><div class="source"><a href="code/hermes/run_agent.py">hermes/run_agent.py</a><span><a href="https://github.com/NousResearch/hermes-agent/blob/0b10b9f8155a7ecadd8c540b87712c791b5c8ac9/run_agent.py" target="_blank" rel="noopener">原仓库 ↗</a></span></div></div><p class="caption">Harness² 为 Apache-2.0；Hermes 为 MIT。各源码副本旁保留对应 LICENSE。本页没有重跑论文的专业任务评测，也未运行 Hermes 后台学习；Hermes 部分是源码追踪结果。HN 评论可提供质疑方向，不能作为实现或效果的证据。</p></section></main>
+<footer class="wrap">研究范围：可执行机制与证据边界 · 2026-10-20 · HTML、图形和交互均可离线使用；随目录携带完整源码和本地运行记录。</footer>
+<script>const stageData=[{"title": "观察", "lead": "读的是任务、执行轨迹、产物和过去经验", "body": "先用基础 harness 执行任务。编辑器获得任务材料、基线轨迹、交付物以及同域经验目录；它据此诊断执行问题。这里的反馈来自可观察行为，不是隐藏 benchmark 分数。", "note": "输入：task / source / rollout / deliverables / library；输出：供编辑器读取的 context 目录。", "code": "<details class=\"codebox\" open><summary>harness2/core/schedule.py<span>L499–534<\/span><\/summary><div class=\"codehead\"><span>原样源码节选 · 1cfe254e8d<\/span><a href=\"https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/schedule.py#L499-L534\" target=\"_blank\" rel=\"noopener\">GitHub ↗<\/a><a href=\"code/harness2/core/schedule.py\" download>完整文件 ↓<\/a><\/div><pre><code>    lib_dir = mode_lib.context_dir() if mode_lib else None\n    r = recursion.run_mode(\n        mode,\n        task_id,\n        k,\n        base,\n        adapter=adapter,\n        prop=prop,\n        work_dir=work_dir,\n        run_id_of=lambda lbl, _n=n: _n.run_id(task_id, lbl),\n        base_tree=base_tree,\n        library_dir=lib_dir,\n    )\n    res.modes[mode] = r.to_dict()\n    candidates = selection.selection_pool(mode, k, r.rollouts, base)\n    if pool_policy == &quot;finals&quot; and k == 1:\n        sel = selection.trivial_selection(\n            task_id, k, mode, candidates, adapter=adapter, work_dir=work_dir\n        )\n    else:\n        sel = selection.run_selection(\n            task_id,\n            k,\n            mode,\n            candidates,\n            adapter=adapter,\n            prop=selector,\n            work_dir=work_dir,\n            pool_kind=&quot;finals&quot;,\n        )\n    if mode_lib and sel.ok:\n        selection.reflect_adoption(\n            task_id,\n            sel,\n            r.rollouts,\n            adapter=adapter,<\/code><\/pre><\/details>"}, {"title": "提出修改", "lead": "模型直接改 context/harness/ 中的文件", "body": "INV 从可复用的一般执行问题切入；DOM 从领域工作流程切入。parallel 模式各生成 k 个候选。不是 Python 自动从错误推导规则，而是 Python 把证据交给模型，模型调用文件工具写新配置。", "note": "候选是文件树 dict[path, text]。模型会话返回工作目录后，程序读取、验证，再执行。", "code": "<details class=\"codebox\" open><summary>harness2/core/recursion.py<span>L367–389<\/span><\/summary><div class=\"codehead\"><span>原样源码节选 · 1cfe254e8d<\/span><a href=\"https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L367-L389\" target=\"_blank\" rel=\"noopener\">GitHub ↗<\/a><a href=\"code/harness2/core/recursion.py\" download>完整文件 ↓<\/a><\/div><pre><code>\n    specs = [(f&quot;{d.lower()}{i}&quot;, d, i) for i in range(1, k + 1) for d in (&quot;INV&quot;, &quot;DOM&quot;)]\n    with ThreadPoolExecutor(max_workers=min(len(specs), propose_workers)) as pool_x:\n        stages = list(\n            pool_x.map(\n                lambda s: _run_stage(\n                    label=s[0],\n                    dim=s[1],\n                    job=prompts.propose(benchmark_prompts, s[1], surface, k=k, index=s[2]),\n                    fallback=base_tree,\n                    adapter=adapter,\n                    prop=prop,\n                    ctx_dir=ctx_dir,\n                    task_id=task_id,\n                    rollouts=base,\n                    harness_dir=base_dir,\n                    library_dir=library_dir,\n                ),\n                specs,\n            )\n        )\n    _record_sessions(ledger, stages)\n    for stage in stages:<\/code><\/pre><\/details>"}, {"title": "实际重跑", "lead": "每个候选都在同一任务上 probe", "body": "用不同 harness 再执行原任务，收集轨迹和交付物。代码验证路径、格式、脚本语法和引用等；这类有效性验证不等于结果质量验证。非法修改重试后可回退旧树。", "note": "Probe 在运行层面真实发生；重跑结果的差异仍可能来自模型随机性或多个同时变动的组件。", "code": "<details class=\"codebox\" open><summary>harness2/core/recursion.py<span>L397–410<\/span><\/summary><div class=\"codehead\"><span>原样源码节选 · 1cfe254e8d<\/span><a href=\"https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L397-L410\" target=\"_blank\" rel=\"noopener\">GitHub ↗<\/a><a href=\"code/harness2/core/recursion.py\" download>完整文件 ↓<\/a><\/div><pre><code>            [(stage.label, stage.tree) for stage in stages],\n            run_id_of,\n            work_dir,\n            width=rollout_workers,\n        )\n    )\n\n    pool_ev = [\n        (stage.label, work_dir / &quot;harnesses&quot; / stage.label, result.rollouts.get(stage.label))\n        for stage in stages\n    ]\n    agg_specs = [f&quot;agg{i}&quot; for i in range(1, k + 1)]\n    with ThreadPoolExecutor(max_workers=min(len(agg_specs), propose_workers)) as pool_x:\n        aggs = list(<\/code><\/pre><\/details>"}, {"title": "合成方案", "lead": "读候选的行为差异，再写一份 harness", "body": "composer 看到基线、INV/DOM 文件树、轨迹、产物和修改说明，由模型决定保留、合并或舍弃哪些改动。parallel 产生 k 个合成方案；sequential 每轮把合成树带到下一轮，并累积历史证据。", "note": "不是机械地拼接文本；合成后还会再运行一次任务，得到最终产物。", "code": "<details class=\"codebox\" open><summary>harness2/core/recursion.py<span>L416–437<\/span><\/summary><div class=\"codehead\"><span>原样源码节选 · 1cfe254e8d<\/span><a href=\"https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L416-L437\" target=\"_blank\" rel=\"noopener\">GitHub ↗<\/a><a href=\"code/harness2/core/recursion.py\" download>完整文件 ↓<\/a><\/div><pre><code>                    fallback=base_tree,\n                    adapter=adapter,\n                    prop=prop,\n                    ctx_dir=ctx_dir,\n                    task_id=task_id,\n                    rollouts=base,\n                    harness_dir=base_dir,\n                    library_dir=library_dir,\n                    pool=pool_ev,\n                    decisions={stage.label: stage.notes or stage.error for stage in stages},\n                ),\n                agg_specs,\n            )\n        )\n    _record_sessions(ledger, aggs)\n    for stage in aggs:\n        result.stages.append(stage)\n        result.trees[stage.label] = stage.tree\n        result.finals.append(stage.label)\n    result.rollouts.update(\n        _roll_many(\n            adapter,<\/code><\/pre><\/details>"}, {"title": "采用产物", "lead": "选择池只有最终方案，基线不在池中", "body": "k>1 时 selector 面向匿名化产物，按任务要求挑选一个；它看不到修改者标签或 harness 来历。k=1 直接采用唯一 final，没有 selector 会话。格式合法、产生了交付物、被采用，都不能推出优于基线。", "note": "编辑器可以保持原树，但最终选择机制本身没有“与基线比较，不如基线就回退”的质量门。", "code": "<details class=\"codebox\" open><summary>harness2/core/selection.py<span>L93–112<\/span><\/summary><div class=\"codehead\"><span>原样源码节选 · 1cfe254e8d<\/span><a href=\"https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L93-L112\" target=\"_blank\" rel=\"noopener\">GitHub ↗<\/a><a href=\"code/harness2/core/selection.py\" download>完整文件 ↓<\/a><\/div><pre><code>def selection_pool(\n    mode: str, k: int, rollouts: dict[str, RunView], base: Sequence[RunView]\n) -&gt; dict[str, RunView]:\n    &quot;&quot;&quot;The one home for selection-pool construction: exactly the k finals of `mode`.\n\n    Labels are derived from k -- agg1..aggk for the parallel mode, c1..ck for the sequential\n    one -- so the reference executions are not in the pool and there is no abstention by\n    construction. This is the published convention and the only pool this release builds.\n\n    `base` is accepted and deliberately unused: it is what the pool excludes, and the call\n    site passes it so that exclusion is visible where the pool is built.\n    &quot;&quot;&quot;\n    del base\n    labels = (\n        [f&quot;agg{i}&quot; for i in range(1, int(k) + 1)]\n        if mode == &quot;agg&quot;\n        else [f&quot;c{t}&quot; for t in range(1, int(k) + 1)]\n    )\n    return {lbl: rollouts[lbl] for lbl in labels if lbl in rollouts}\n<\/code><\/pre><\/details>"}, {"title": "提炼经验", "lead": "另一次模型调用做归因和泛化", "body": "reflect_adoption 把全部任务内候选、修改说明、轨迹、最终采用理由和基础树交给模型。提示词要求逐项给 helped / hurt / no observed effect / confounded，并最多写一条可迁移经验；没有充分证据可以 NO_ENTRY。", "note": "程序从回复解析 cue / lesson / evidence / confidence。前三个字段必须非空；不会独立证明 evidence 支持 lesson，也不要求 confidence 达到阈值。", "code": "<details class=\"codebox\" open><summary>harness2/core/selection.py<span>L490–511<\/span><\/summary><div class=\"codehead\"><span>原样源码节选 · 1cfe254e8d<\/span><a href=\"https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L490-L511\" target=\"_blank\" rel=\"noopener\">GitHub ↗<\/a><a href=\"code/harness2/core/selection.py\" download>完整文件 ↓<\/a><\/div><pre><code>    m = _EXP.search(reply.text)\n    if not m:\n        return {}\n    out: dict = {}\n    for line in m.group(1).strip().splitlines():\n        if &quot;:&quot; in line:\n            key, _, val = line.partition(&quot;:&quot;)\n            key = key.strip().lower()\n            if key in (&quot;cue&quot;, &quot;lesson&quot;, &quot;evidence&quot;, &quot;confidence&quot;):\n                out[key] = val.strip()\n    if not all(out.get(key) for key in (&quot;cue&quot;, &quot;lesson&quot;, &quot;evidence&quot;)):\n        return {}\n    if edits:\n        out[&quot;edits&quot;] = edits.group(1).strip()\n    context.assert_tree_has_no_grader_verdicts({&quot;EXPERIENCE.md&quot;: json.dumps(out)})\n    return out<\/code><\/pre><\/details>"}, {"title": "保存与复用", "lead": "同域经验目录，下一任务交给编辑器浏览", "body": "Library.add 保存采用的完整 harness、EXPERIENCE.md 并重建 INDEX.md。下一任务把对应 domain 的整个库复制到 context/library/，由模型浏览和挑选。没有在这条路径里看到向量相似度检索。", "note": "过去 harness 不会直接替换下一任务的基线。编辑器要把有用组件复制进当前 harness，并重新核实任务事实；经验是否被读取、正确应用，仍需看轨迹。", "code": "<details class=\"codebox\" open><summary>harness2/core/context.py<span>L161–169<\/span><\/summary><div class=\"codehead\"><span>原样源码节选 · 1cfe254e8d<\/span><a href=\"https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/context.py#L161-L169\" target=\"_blank\" rel=\"noopener\">GitHub ↗<\/a><a href=\"code/harness2/core/context.py\" download>完整文件 ↓<\/a><\/div><pre><code>    if library_dir and Path(library_dir).is_dir() and any(Path(library_dir).iterdir()):\n        assert_no_leak_paths(library_dir, adapter.spec.leak_globs)\n\n        shutil.copytree(library_dir, dest / &quot;library&quot;, dirs_exist_ok=True)\n        lib = True\n\n    assert_no_leak_paths(dest, adapter.spec.leak_globs)\n\n    assert_no_grader_verdicts(dest)<\/code><\/pre><\/details>"}];const stageButtons=[...document.querySelectorAll('[data-stage]')];function showStage(i){const s=stageData[i];document.getElementById('stepdetail').innerHTML='<div class="sub">步骤 '+(i+1)+' / '+s.title+'</div><h3>'+s.lead+'</h3><p>'+s.body+'</p><div class="notice green">'+s.note+'</div>'+s.code;stageButtons.forEach((b,j)=>b.setAttribute('aria-pressed',j===i?'true':'false'));}stageButtons.forEach(b=>b.addEventListener('click',()=>showStage(Number(b.dataset.stage))));const slider=document.getElementById('budgetK');slider.addEventListener('input',()=>{const k=Number(slider.value);document.getElementById('kValue').textContent=k;document.getElementById('rollouts').textContent=4*k;document.getElementById('editors').textContent=3*k;document.getElementById('selectors').textContent=k===1?0:1;document.getElementById('budgetText').textContent='k='+k+'：'+(k===1?'唯一 final 直接采用。':'在 '+k+' 个 finals 中用 selector 选择。')+'经验库启用且采用成功时再反思；失败重试另计，阶段数不等于 API 请求数。';});document.getElementById('expandAll').addEventListener('click',()=>{document.querySelectorAll('.codebox').forEach(d=>d.open=true);});</script></body></html>

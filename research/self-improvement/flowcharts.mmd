@@ -1,0 +1,29 @@
+%% 依据固定版本源码整理的机制图；非上游原图。
+flowchart TB
+  T[任务 + 基础 harness] --> B[基线执行：轨迹与产物]
+  B --> P[编辑模型：INV / DOM 修改文件]
+  R[(同域历史经验库)] -. 提供给编辑器 .-> P
+  P --> V{结构与有效性检查}
+  V -->|通过| Q[Probe：同题重跑候选]
+  V -->|失败| F[重试；仍失败回退旧树]
+  F --> Q
+  Q --> C[Compose：模型比较轨迹并合成 harness]
+  C --> E[执行最终 harness]
+  E --> S[采用：k=1 直接 final；k>1 从 finals 中选]
+  S --> X[模型反思：修改归因与可迁移经验]
+  X --> G{cue / lesson / evidence 非空}
+  G -->|是| R
+  G -->|NO_ENTRY 或格式不完整| N[不写入经验库]
+  S -. 采用后独立评测；不回流设计内反馈 .-> J[benchmark judge]
+  R --> NEXT[下一同域任务：编辑器浏览目录并复制适用组件]
+  NEXT --> P
+  NOTE[注意：最终选择池不含基线；字段完整不等于经验正确]
+
+flowchart LR
+  A[Hermes 主对话：用户纠正 / 工具执行] --> G{回合完成且触发条件满足}
+  G --> R[后台 review fork：读取快照]
+  R --> W[受限 skills / memory 工具]
+  W --> K[持久化技能、支持文件、记忆]
+  K --> I[未来提示词：技能索引 / 记忆注入]
+  I --> V[模型按需 skill_view 并应用]
+  NOTE[所审阅学习路径未组织固定的多 harness 同题对照搜索]
